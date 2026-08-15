@@ -8,11 +8,11 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 const NAV = [
-  { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/learning',    icon: BookOpen,         label: 'Apprentissage' },
-  { to: '/skillmap',    icon: Map,              label: 'Skill Map' },
-  { to: '/progress',    icon: BarChart2,        label: 'Progression' },
-  { to: '/tutor',       icon: MessageSquare,    label: 'Tuteur IA' },
+  { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard',     end: true  },
+  { to: '/learning',    icon: BookOpen,         label: 'Apprentissage', end: true  },
+  { to: '/skillmap',    icon: Map,              label: 'Skill Map',     end: false },
+  { to: '/progress',    icon: BarChart2,        label: 'Progression',   end: true  },
+  { to: '/tutor',       icon: MessageSquare,    label: 'Tuteur IA',     end: true  },
 ];
 
 export default function Sidebar() {
@@ -53,10 +53,11 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 py-4 px-2 space-y-1" aria-label="Navigation principale">
-        {NAV.map(({ to, icon: Icon, label }) => (
+        {NAV.map(({ to, icon: Icon, label, end }) => (
           <NavLink
             key={to}
             to={to}
+            end={end}
             className={({ isActive }) =>
               clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group',

@@ -259,7 +259,7 @@ export default function LearningPathPage() {
                     value={completedLessons}
                     max={module.lessons.length}
                     height="h-1"
-                    color={module.statut === 'complete' ? 'from-success-500 to-success-500' : undefined}
+                    variant={module.statut === 'complete' ? 'success' : 'primary'}
                   />
                 </div>
               )}

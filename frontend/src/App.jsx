@@ -20,15 +20,22 @@ import EvaluationPage from './pages/evaluation/EvaluationPage';
 // App pages
 import DashboardPage from './pages/dashboard/DashboardPage';
 import ProgressPage from './pages/dashboard/ProgressPage';
+import LearningIndexPage from './pages/learning/LearningIndexPage';
 import LearningPathPage from './pages/learning/LearningPathPage';
 import LessonPage from './pages/learning/LessonPage';
 import TutorPage from './pages/learning/TutorPage';
 import QuizPage from './pages/quiz/QuizPage';
 import SkillMapPage from './pages/skillmap/SkillMapPage';
+import SettingsPage from './pages/settings/SettingsPage';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <AuthProvider>
         <Routes>
           {/* Root redirect */}
@@ -71,6 +78,9 @@ export default function App() {
           >
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/progress" element={<ProgressPage />} />
+            {/* Learning index (liste des objectifs) */}
+            <Route path="/learning" element={<LearningIndexPage />} />
+            {/* Learning path (modules d'un objectif) */}
             <Route path="/learning/:goalId" element={<LearningPathPage />} />
             <Route path="/lesson/:lessonId" element={<LessonPage />} />
             <Route path="/tutor" element={<TutorPage />} />
@@ -78,6 +88,7 @@ export default function App() {
             <Route path="/quiz/module/:moduleId" element={<QuizPage />} />
             <Route path="/skillmap" element={<SkillMapPage />} />
             <Route path="/skillmap/:goalId" element={<SkillMapPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             {/* Catch-all inside app */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

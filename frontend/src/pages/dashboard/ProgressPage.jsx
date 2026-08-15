@@ -4,8 +4,9 @@ import { progressService } from '../../services/api';
 import Spinner from '../../components/ui/Spinner';
 import ProgressBar from '../../components/ui/ProgressBar';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, AreaChart, Area,
+  BarChart, Bar,
 } from 'recharts';
 import clsx from 'clsx';
 
@@ -188,7 +189,7 @@ export default function ProgressPage() {
               <ProgressBar
                 value={m.progression}
                 height="h-2"
-                color={m.progression === 100 ? 'from-success-500 to-success-500' : m.statut === 'verrouille' ? 'from-surface-700 to-surface-700' : undefined}
+                variant={m.progression === 100 ? 'success' : m.statut === 'verrouille' ? 'muted' : 'primary'}
               />
             </div>
           ))}

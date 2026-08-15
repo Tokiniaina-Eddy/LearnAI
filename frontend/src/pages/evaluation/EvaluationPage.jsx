@@ -252,7 +252,7 @@ export default function EvaluationPage() {
                       <ProgressBar
                         value={c.score}
                         height="h-2"
-                        color={c.score >= 70 ? 'from-success-500 to-success-500' : c.score >= 40 ? 'from-warning-500 to-warning-500' : 'from-danger-500 to-danger-500'}
+                        variant={c.score >= 70 ? 'success' : c.score >= 40 ? 'warning' : 'danger'}
                       />
                     </div>
                   ))}

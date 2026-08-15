@@ -33,12 +33,6 @@ const getTendanceIcon = (t) => {
   return <Minus className="w-4 h-4 text-slate-500" />;
 };
 
-const getScoreColor = (score) => {
-  if (score >= 70) return 'from-success-500 to-success-500';
-  if (score >= 40) return 'from-warning-500 to-warning-500';
-  return 'from-danger-500 to-danger-500';
-};
-
 const getScoreLabel = (score) => {
   if (score >= 80) return { label: 'Maîtrisé', color: 'badge-success' };
   if (score >= 60) return { label: 'Bien', color: 'badge-primary' };
@@ -240,7 +234,11 @@ export default function SkillMapPage() {
                         <span className="text-slate-500">Niveau</span>
                         <span className="font-semibold text-slate-200">{skill.score}%</span>
                       </div>
-                      <ProgressBar value={skill.score} height="h-2.5" color={getScoreColor(skill.score)} />
+                      <ProgressBar
+                        value={skill.score}
+                        height="h-2.5"
+                        variant={skill.score >= 70 ? 'success' : skill.score >= 40 ? 'warning' : 'danger'}
+                      />
                     </div>
                   </div>
                 );

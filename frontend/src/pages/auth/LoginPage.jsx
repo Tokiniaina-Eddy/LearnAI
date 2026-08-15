@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, FlaskConical } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Spinner from '../../components/ui/Spinner';
 import toast from 'react-hot-toast';
+
+// Identifiants de démo (synchronisés avec MOCK_USER dans AuthContext)
+const DEMO_EMAIL = 'demo@learnai.dev';
+const DEMO_PASSWORD = 'demo1234';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -45,7 +49,32 @@ export default function LoginPage() {
   return (
     <div className="animate-in">
       <h2 className="text-2xl font-bold text-slate-50 mb-1">Bon retour 👋</h2>
-      <p className="text-slate-400 text-sm mb-8">Connecte-toi pour reprendre ton apprentissage</p>
+      <p className="text-slate-400 text-sm mb-6">Connecte-toi pour reprendre ton apprentissage</p>
+
+      {/* ── Encart compte de démo ── */}
+      <div className="mb-6 p-4 rounded-xl border border-indigo-700/40 bg-indigo-600/10">
+        <div className="flex items-center gap-2 mb-3">
+          <FlaskConical className="w-4 h-4 text-indigo-400" />
+          <span className="text-xs font-semibold text-indigo-300 uppercase tracking-wide">Compte de test</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+          <div className="bg-slate-800 rounded-lg px-3 py-2">
+            <p className="text-slate-500 mb-0.5">Email</p>
+            <p className="text-slate-200 font-mono">{DEMO_EMAIL}</p>
+          </div>
+          <div className="bg-slate-800 rounded-lg px-3 py-2">
+            <p className="text-slate-500 mb-0.5">Mot de passe</p>
+            <p className="text-slate-200 font-mono">{DEMO_PASSWORD}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setForm({ email: DEMO_EMAIL, password: DEMO_PASSWORD })}
+          className="w-full text-xs py-2 rounded-lg bg-indigo-600/20 border border-indigo-600/30 text-indigo-300 hover:bg-indigo-600/30 transition-all font-medium"
+        >
+          Remplir automatiquement
+        </button>
+      </div>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
         {/* Email */}
@@ -98,7 +127,7 @@ export default function LoginPage() {
         </div>
 
         {errors.general && (
-          <div className="bg-danger-500/10 border border-danger-500/20 rounded-xl px-4 py-3 text-danger-400 text-sm">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm">
             {errors.general}
           </div>
         )}

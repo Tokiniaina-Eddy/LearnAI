@@ -1,6 +1,19 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/api';
 
+// ── DEV MODE : mock user, pas de backend requis ───────────────────────────────
+const DEV_MODE = true;
+
+const MOCK_USER = {
+  id: 1,
+  nom: 'Jean Dupont',
+  email: 'demo@learnai.dev',
+  role: 'apprenant',
+  date_creation: '2026-08-15',
+};
+const MOCK_TOKEN = 'mock_jwt_token_dev_only';
+// ─────────────────────────────────────────────────────────────────────────────
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -19,6 +32,13 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const verify = async () => {
       if (!token) { setLoading(false); return; }
+
+      if (DEV_MODE) {
+        // En mode DEV, le token mock est toujours valide
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data } = await authService.me();
         setUser(data);
@@ -33,6 +53,15 @@ export function AuthProvider({ children }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = useCallback(async (credentials) => {
+    if (DEV_MODE) {
+      // Accepte n'importe quel email/password en mode DEV
+      const user = { ...MOCK_USER, email: credentials.email || MOCK_USER.email };
+      localStorage.setItem('learnai_token', MOCK_TOKEN);
+      localStorage.setItem('learnai_user', JSON.stringify(user));
+      setToken(MOCK_TOKEN);
+      setUser(user);
+      return user;
+    }
     const { data } = await authService.login(credentials);
     localStorage.setItem('learnai_token', data.access_token);
     localStorage.setItem('learnai_user', JSON.stringify(data.user));
@@ -42,6 +71,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (payload) => {
+    if (DEV_MODE) {
+      const user = { ...MOCK_USER, nom: payload.nom || MOCK_USER.nom, email: payload.email || MOCK_USER.email };
+      localStorage.setItem('learnai_token', MOCK_TOKEN);
+      localStorage.setItem('learnai_user', JSON.stringify(user));
+      setToken(MOCK_TOKEN);
+      setUser(user);
+      return user;
+    }
     const { data } = await authService.register(payload);
     localStorage.setItem('learnai_token', data.access_token);
     localStorage.setItem('learnai_user', JSON.stringify(data.user));
