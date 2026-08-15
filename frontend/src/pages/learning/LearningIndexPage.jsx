@@ -1,27 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Plus, ChevronRight, Sparkles, Target, Lock, CheckCircle, PlayCircle } from 'lucide-react';
+import { BookOpen, Plus, ChevronRight, Sparkles, Target, CheckCircle, PlayCircle } from 'lucide-react';
 import { goalService } from '../../services/api';
 import Spinner from '../../components/ui/Spinner';
 import ProgressBar from '../../components/ui/ProgressBar';
 import EmptyState from '../../components/ui/EmptyState';
 import clsx from 'clsx';
-
-// ── Mock ──────────────────────────────────────────────────────────────────────
-const MOCK_GOALS = [
-  {
-    id: 1,
-    objectif: 'Maîtriser FastAPI depuis zéro',
-    technologie: 'FastAPI',
-    domaine: 'web_backend',
-    statut: 'actif',
-    progression: 38,
-    modules_total: 7,
-    modules_completes: 1,
-    niveau: 'debutant',
-    prochaine_lecon: 'Query Parameters',
-  },
-];
 
 const DOMAIN_EMOJI = {
   web_backend: '⚙️',
@@ -39,22 +23,39 @@ const NIVEAU_LABEL = {
   intermediaire: '🚀 Intermédiaire',
   avance: '⚡ Avancé',
 };
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function LearningIndexPage() {
   const navigate = useNavigate();
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     goalService.list()
-      .then((res) => setGoals(res.data || MOCK_GOALS))
-      .catch(() => setGoals(MOCK_GOALS))
+      .then((res) => setGoals(res.data || []))
+      .catch((err) => {
+        // Réseau inaccessible — afficher un message, pas de faux contenu
+        setError(err.response?.data?.detail || 'Impossible de charger tes objectifs. Vérifie que le backend est démarré.');
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Spinner size="xl" /></div>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="card card-body max-w-md text-center">
+          <p className="text-red-400 font-medium mb-2">Erreur de connexion</p>
+          <p className="text-slate-400 text-sm">{error}</p>
+          <button onClick={() => window.location.reload()} className="btn-secondary mt-4 mx-auto">
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -12,88 +12,6 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
 // ── Mock data ────────────────────────────────────────────────────────────────
-const MOCK_COURSE = {
-  id: 1,
-  titre: 'Maîtriser FastAPI',
-  description: 'Un parcours complet pour créer des APIs REST performantes avec FastAPI et Python.',
-  niveau: 'debutant',
-  progression: 38,
-  modules: [
-    {
-      id: 1, ordre: 1, titre: 'Introduction à FastAPI', statut: 'complete',
-      description: 'Découverte du framework, installation et premier endpoint.',
-      lessons: [
-        { id: 1, titre: 'Qu\'est-ce que FastAPI ?', statut: 'complete', duree: 10 },
-        { id: 2, titre: 'Installation et configuration', statut: 'complete', duree: 15 },
-        { id: 3, titre: 'Ton premier endpoint', statut: 'complete', duree: 20 },
-      ],
-      has_quiz: true, quiz_statut: 'complete', quiz_score: 80,
-    },
-    {
-      id: 2, ordre: 2, titre: 'Routing & Paramètres', statut: 'en_cours',
-      description: 'Path parameters, query parameters, corps de requête.',
-      lessons: [
-        { id: 4, titre: 'Path parameters', statut: 'complete', duree: 15 },
-        { id: 5, titre: 'Query parameters', statut: 'en_cours', duree: 15 },
-        { id: 6, titre: 'Request body avec Pydantic', statut: 'verrouille', duree: 20 },
-        { id: 7, titre: 'Headers & Cookies', statut: 'verrouille', duree: 15 },
-      ],
-      has_quiz: true, quiz_statut: 'disponible', quiz_score: null,
-    },
-    {
-      id: 3, ordre: 3, titre: 'Validation des données', statut: 'verrouille',
-      description: 'Pydantic models, validation automatique, gestion des erreurs.',
-      lessons: [
-        { id: 8, titre: 'Modèles Pydantic', statut: 'verrouille', duree: 20 },
-        { id: 9, titre: 'Validation avancée', statut: 'verrouille', duree: 20 },
-        { id: 10, titre: 'Gestion des erreurs HTTP', statut: 'verrouille', duree: 15 },
-      ],
-      has_quiz: true, quiz_statut: 'verrouille', quiz_score: null,
-    },
-    {
-      id: 4, ordre: 4, titre: 'Base de données avec SQLAlchemy', statut: 'verrouille',
-      description: 'Connexion PostgreSQL, ORM, migrations avec Alembic.',
-      lessons: [
-        { id: 11, titre: 'Configuration SQLAlchemy', statut: 'verrouille', duree: 25 },
-        { id: 12, titre: 'Modèles & relations', statut: 'verrouille', duree: 30 },
-        { id: 13, titre: 'CRUD complet', statut: 'verrouille', duree: 30 },
-      ],
-      has_quiz: false,
-    },
-    {
-      id: 5, ordre: 5, titre: 'Authentification JWT', statut: 'verrouille',
-      description: 'OAuth2, JWT tokens, protection des routes.',
-      lessons: [
-        { id: 14, titre: 'OAuth2 avec Password Flow', statut: 'verrouille', duree: 25 },
-        { id: 15, titre: 'Générer & vérifier les JWT', statut: 'verrouille', duree: 25 },
-        { id: 16, titre: 'Protéger les endpoints', statut: 'verrouille', duree: 20 },
-      ],
-      has_quiz: true, quiz_statut: 'verrouille', quiz_score: null,
-    },
-    {
-      id: 6, ordre: 6, titre: 'Tests & Documentation', statut: 'verrouille',
-      description: 'TestClient, pytest, Swagger UI, ReDoc.',
-      lessons: [
-        { id: 17, titre: 'Écrire des tests avec pytest', statut: 'verrouille', duree: 25 },
-        { id: 18, titre: 'Documentation automatique', statut: 'verrouille', duree: 15 },
-      ],
-      has_quiz: false,
-    },
-    {
-      id: 7, ordre: 7, titre: 'Projet final : API complète', statut: 'verrouille',
-      description: 'Construire une API REST complète de bout en bout.',
-      lessons: [
-        { id: 19, titre: 'Architecture du projet', statut: 'verrouille', duree: 30 },
-        { id: 20, titre: 'Implémentation', statut: 'verrouille', duree: 60 },
-        { id: 21, titre: 'Déploiement', statut: 'verrouille', duree: 30 },
-      ],
-      has_quiz: false,
-      is_projet: true,
-    },
-  ],
-};
-// ─────────────────────────────────────────────────────────────────────────────
-
 const statutIcon = {
   complete:   <CheckCircle className="w-5 h-5 text-success-500" />,
   en_cours:   <PlayCircle className="w-5 h-5 text-primary-400" />,
@@ -110,19 +28,23 @@ export default function LearningPathPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [expandedModule, setExpandedModule] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     courseService.get(goalId)
       .then((res) => {
         setCourse(res.data);
-        // Auto-expand active module
         const active = res.data.modules?.find(m => m.statut === 'en_cours');
         if (active) setExpandedModule(active.id);
       })
-      .catch(() => {
-        setCourse(MOCK_COURSE);
-        const active = MOCK_COURSE.modules.find(m => m.statut === 'en_cours');
-        if (active) setExpandedModule(active.id);
+      .catch((err) => {
+        const status = err.response?.status;
+        if (status === 404) {
+          // Pas encore de parcours généré — afficher le bouton "Générer"
+          setCourse(null);
+        } else {
+          setError(err.response?.data?.detail || 'Erreur lors du chargement du parcours.');
+        }
       })
       .finally(() => setLoading(false));
   }, [goalId]);
@@ -142,6 +64,18 @@ export default function LearningPathPage() {
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Spinner size="xl" /></div>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="card card-body max-w-md text-center">
+          <p className="text-red-400 font-medium mb-2">Erreur</p>
+          <p className="text-slate-400 text-sm">{error}</p>
+          <button onClick={() => window.location.reload()} className="btn-secondary mt-4 mx-auto">Réessayer</button>
+        </div>
+      </div>
+    );
   }
 
   if (!course) {

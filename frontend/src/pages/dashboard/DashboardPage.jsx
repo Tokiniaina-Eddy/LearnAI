@@ -12,33 +12,22 @@ import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tool
 import clsx from 'clsx';
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
+// Utilisé uniquement si DEV_MODE=true dans AuthContext
 const MOCK = {
-  objectif_actuel: { id: 1, domaine: 'web_backend', objectif: 'Apprendre FastAPI depuis zéro', technologie: 'FastAPI' },
-  progression_globale: 38,
-  module_actuel: { id: 2, titre: 'Routing & Path Parameters', ordre: 2 },
-  prochaine_activite: { type: 'lesson', titre: 'Comprendre les Query Parameters', module: 'Routing' },
-  score_moyen: 72,
-  temps_total_minutes: 145,
-  streak_jours: 5,
-  xp: 340,
-  niveau_xp: 'Apprenti',
-  modules_completes: 1,
-  modules_total: 7,
-  competences_radar: [
-    { sujet: 'HTTP', score: 85 },
-    { sujet: 'Routing', score: 60 },
-    { sujet: 'Auth', score: 25 },
-    { sujet: 'BDD', score: 40 },
-    { sujet: 'REST', score: 70 },
-    { sujet: 'Tests', score: 15 },
-  ],
-  points_faibles: ['Authentification JWT', 'Connexion base de données', 'Tests automatisés'],
-  historique_recent: [
-    { date: '2026-08-15', activite: 'Leçon : Introduction à FastAPI', score: null, type: 'lesson' },
-    { date: '2026-08-14', activite: 'Quiz : HTTP & REST', score: 80, type: 'quiz' },
-    { date: '2026-08-13', activite: 'Exercice : Premier endpoint', score: 90, type: 'exercise' },
-    { date: '2026-08-12', activite: 'Leçon : Installation & Setup', score: null, type: 'lesson' },
-  ],
+  objectif_actuel: null,
+  progression_globale: 0,
+  module_actuel: null,
+  prochaine_activite: null,
+  score_moyen: 0,
+  temps_total_minutes: 0,
+  streak_jours: 0,
+  xp: 0,
+  niveau_xp: 'Débutant',
+  modules_completes: 0,
+  modules_total: 0,
+  competences_radar: [],
+  points_faibles: [],
+  historique_recent: [],
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -74,7 +63,10 @@ export default function DashboardPage() {
   useEffect(() => {
     dashboardService.getSummary()
       .then((res) => setData(res.data))
-      .catch(() => setData(MOCK))
+      .catch(() => {
+        // Backend inaccessible — afficher un dashboard vide propre
+        setData(MOCK);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -89,6 +81,9 @@ export default function DashboardPage() {
   const d = data || MOCK;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+
+  // Afficher un CTA si l'utilisateur n'a aucun objectif actif
+  const hasGoal = !!d.objectif_actuel;
 
   return (
     <div className="space-y-8 animate-in">
@@ -113,6 +108,22 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* CTA si pas d'objectif */}
+      {!hasGoal && (
+        <div className="card card-body bg-gradient-to-br from-indigo-950/40 to-surface-900 border-indigo-700/30 text-center py-12">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-600/30 flex items-center justify-center mx-auto mb-4">
+            <Zap className="w-8 h-8 text-indigo-400" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-50 mb-2">Prêt à commencer ?</h2>
+          <p className="text-slate-400 mb-6 max-w-md mx-auto">
+            Définis ton premier objectif d'apprentissage et laisse l'IA générer un parcours entièrement personnalisé.
+          </p>
+          <a href="/onboarding/profile" className="btn-primary btn-lg mx-auto">
+            <Zap className="w-4 h-4" /> Créer mon premier objectif
+          </a>
+        </div>
+      )}
 
       {/* Objectif actuel + progression */}
       {d.objectif_actuel && (

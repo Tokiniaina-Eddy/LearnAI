@@ -11,13 +11,142 @@ const QUICK_PROMPTS = [
   'J\'ai une erreur dans mon code',
 ];
 
+// ── Markdown renderer léger ────────────────────────────────────────────────
+function renderMarkdown(text) {
+  const lines = text.split('\n');
+  const elements = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Bloc de code ```
+    if (line.trimStart().startsWith('```')) {
+      const lang = line.replace(/```/, '').trim();
+      const codeLines = [];
+      i++;
+      while (i < lines.length && !lines[i].trimStart().startsWith('```')) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      elements.push(
+        <pre key={i} className="my-2 p-3 bg-slate-900 border border-slate-700 rounded-xl overflow-x-auto text-xs font-mono text-slate-200 leading-relaxed whitespace-pre">
+          <code>{codeLines.join('\n')}</code>
+        </pre>
+      );
+      i++;
+      continue;
+    }
+
+    // Liste numérotée : "1. texte" ou "1) texte"
+    if (/^\d+[\.\)]\s+/.test(line)) {
+      const listItems = [];
+      while (i < lines.length && /^\d+[\.\)]\s+/.test(lines[i])) {
+        const content = lines[i].replace(/^\d+[\.\)]\s+/, '');
+        listItems.push(
+          <li key={i} className="flex gap-2 items-start">
+            <span className="shrink-0 w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-300 text-xs flex items-center justify-center mt-0.5 font-semibold">
+              {lines[i].match(/^(\d+)/)[1]}
+            </span>
+            <span>{inlineMarkdown(content)}</span>
+          </li>
+        );
+        i++;
+      }
+      elements.push(<ol key={`ol-${i}`} className="space-y-1.5 my-2 text-sm">{listItems}</ol>);
+      continue;
+    }
+
+    // Liste à puces : "- texte" ou "* texte" ou "• texte"
+    if (/^[-\*•]\s+/.test(line)) {
+      const listItems = [];
+      while (i < lines.length && /^[-\*•]\s+/.test(lines[i])) {
+        const content = lines[i].replace(/^[-\*•]\s+/, '');
+        listItems.push(
+          <li key={i} className="flex gap-2 items-start">
+            <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2" />
+            <span>{inlineMarkdown(content)}</span>
+          </li>
+        );
+        i++;
+      }
+      elements.push(<ul key={`ul-${i}`} className="space-y-1.5 my-2 text-sm">{listItems}</ul>);
+      continue;
+    }
+
+    // Titre ## ou ###
+    if (/^#{1,3}\s+/.test(line)) {
+      const level = line.match(/^(#+)/)[1].length;
+      const content = line.replace(/^#+\s+/, '');
+      const cls = level === 1
+        ? 'text-base font-bold text-slate-100 mt-3 mb-1'
+        : level === 2
+        ? 'text-sm font-semibold text-slate-200 mt-2 mb-1'
+        : 'text-sm font-medium text-slate-300 mt-1';
+      elements.push(<p key={i} className={cls}>{inlineMarkdown(content)}</p>);
+      i++;
+      continue;
+    }
+
+    // Ligne vide → espacement
+    if (line.trim() === '') {
+      elements.push(<div key={i} className="h-1.5" />);
+      i++;
+      continue;
+    }
+
+    // Paragraphe normal
+    elements.push(
+      <p key={i} className="text-sm leading-relaxed">
+        {inlineMarkdown(line)}
+      </p>
+    );
+    i++;
+  }
+
+  return elements;
+}
+
+// Inline markdown: **bold**, *italic*, `code`
+function inlineMarkdown(text) {
+  const parts = [];
+  // Split on **bold**, *italic*, `code`
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`)/g;
+  let last = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Text before match
+    if (match.index > last) {
+      parts.push(text.slice(last, match.index));
+    }
+    if (match[0].startsWith('**')) {
+      parts.push(<strong key={match.index} className="font-semibold text-slate-100">{match[2]}</strong>);
+    } else if (match[0].startsWith('*')) {
+      parts.push(<em key={match.index} className="italic text-slate-300">{match[3]}</em>);
+    } else if (match[0].startsWith('`')) {
+      parts.push(
+        <code key={match.index} className="bg-slate-700 text-indigo-300 px-1.5 py-0.5 rounded text-xs font-mono">
+          {match[4]}
+        </code>
+      );
+    }
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) {
+    parts.push(text.slice(last));
+  }
+  return parts.length > 0 ? parts : text;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function Message({ msg }) {
   const isUser = msg.role === 'user';
   return (
     <div className={clsx('flex gap-3', isUser && 'flex-row-reverse')}>
       <div className={clsx(
-        'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
-        isUser ? 'bg-primary-600' : 'bg-gradient-to-br from-primary-500 to-accent-500'
+        'w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5',
+        isUser ? 'bg-indigo-600' : 'bg-gradient-to-br from-indigo-500 to-orange-400'
       )}>
         {isUser
           ? <User className="w-3.5 h-3.5 text-white" />
@@ -25,12 +154,15 @@ function Message({ msg }) {
         }
       </div>
       <div className={clsx(
-        'max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+        'max-w-[85%] rounded-2xl px-4 py-3',
         isUser
-          ? 'bg-primary-600 text-white rounded-tr-sm'
-          : 'bg-surface-800 text-slate-200 rounded-tl-sm border border-surface-700'
+          ? 'bg-indigo-600 text-white rounded-tr-sm text-sm leading-relaxed'
+          : 'bg-slate-800 text-slate-200 rounded-tl-sm border border-slate-700'
       )}>
-        {msg.content}
+        {isUser
+          ? msg.content
+          : <div className="space-y-0.5">{renderMarkdown(msg.content)}</div>
+        }
       </div>
     </div>
   );

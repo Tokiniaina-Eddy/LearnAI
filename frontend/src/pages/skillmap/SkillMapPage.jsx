@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { Map, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { skillService, goalService } from '../../services/api';
 import Spinner from '../../components/ui/Spinner';
 import ProgressBar from '../../components/ui/ProgressBar';
+import EmptyState from '../../components/ui/EmptyState';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis,
@@ -11,25 +11,9 @@ import {
 } from 'recharts';
 import clsx from 'clsx';
 
-// ── Mock ──────────────────────────────────────────────────────────────────────
-const MOCK_GOALS = [
-  { id: 1, objectif: 'Maîtriser FastAPI', technologie: 'FastAPI', statut: 'actif' },
-];
-
-const MOCK_SKILLS = [
-  { id: 1, nom: 'HTTP & REST', score: 85, tendance: 'up', description: 'Méthodes HTTP, statuts, principes REST' },
-  { id: 2, nom: 'Routing', score: 60, tendance: 'up', description: 'Path & query parameters, routing avancé' },
-  { id: 3, nom: 'Validation Pydantic', score: 45, tendance: 'stable', description: 'Modèles Pydantic, validation des données' },
-  { id: 4, nom: 'Base de données', score: 30, tendance: 'down', description: 'SQLAlchemy, PostgreSQL, migrations' },
-  { id: 5, nom: 'Authentification', score: 25, tendance: 'stable', description: 'OAuth2, JWT, sécurité des endpoints' },
-  { id: 6, nom: 'Tests', score: 15, tendance: 'stable', description: 'pytest, TestClient, TDD' },
-  { id: 7, nom: 'Déploiement', score: 10, tendance: 'stable', description: 'Docker, cloud, CI/CD' },
-];
-// ─────────────────────────────────────────────────────────────────────────────
-
 const getTendanceIcon = (t) => {
-  if (t === 'up') return <TrendingUp className="w-4 h-4 text-success-500" />;
-  if (t === 'down') return <TrendingDown className="w-4 h-4 text-danger-500" />;
+  if (t === 'up') return <TrendingUp className="w-4 h-4 text-green-500" />;
+  if (t === 'down') return <TrendingDown className="w-4 h-4 text-red-400" />;
   return <Minus className="w-4 h-4 text-slate-500" />;
 };
 
@@ -56,13 +40,13 @@ export default function SkillMapPage() {
   useEffect(() => {
     goalService.list()
       .then((res) => {
-        const g = res.data || MOCK_GOALS;
+        const g = res.data || [];
         setGoals(g);
-        setSelectedGoal(g[0]?.id);
+        if (g.length > 0) setSelectedGoal(g[0]?.id);
       })
       .catch(() => {
-        setGoals(MOCK_GOALS);
-        setSelectedGoal(MOCK_GOALS[0]?.id);
+        // backend offline — liste vide
+        setGoals([]);
       });
   }, []);
 
@@ -70,8 +54,13 @@ export default function SkillMapPage() {
     if (!selectedGoal) return;
     setLoading(true);
     skillService.getByGoal(selectedGoal)
-      .then((res) => setSkills(res.data))
-      .catch(() => setSkills(MOCK_SKILLS))
+      .then((res) => {
+        // Backend retourne SkillMapOut: { goal_id, skills: [...], score_global }
+        const data = res.data;
+        const skillsArray = Array.isArray(data) ? data : (data?.skills ?? []);
+        setSkills(skillsArray);
+      })
+      .catch(() => setSkills([]))
       .finally(() => setLoading(false));
   }, [selectedGoal]);
 
@@ -112,6 +101,12 @@ export default function SkillMapPage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64"><Spinner size="xl" /></div>
+      ) : skills.length === 0 ? (
+        <EmptyState
+          icon={Map}
+          title="Aucune compétence pour l'instant"
+          description="Passe l'évaluation initiale et génère ton parcours pour voir ta carte de compétences."
+        />
       ) : (
         <>
           {/* Global score */}
