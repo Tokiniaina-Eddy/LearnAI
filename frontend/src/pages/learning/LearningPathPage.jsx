@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   BookOpen, ChevronRight, CheckCircle, Lock, PlayCircle,
   FileQuestion, Code2, Sparkles, RefreshCw, AlertCircle,
+  Trophy, Sprout, TrendingUp, Zap,
 } from 'lucide-react';
 import { courseService } from '../../services/api';
 import ProgressBar from '../../components/ui/ProgressBar';
@@ -19,7 +20,11 @@ const statutIcon = {
   verrouille: <Lock className="w-4 h-4 text-slate-600" />,
 };
 
-const niveauLabel = { debutant: '🌱 Débutant', intermediaire: '🚀 Intermédiaire', avance: '⚡ Avancé' };
+const niveauLabel = {
+  debutant:      { icon: Sprout,     label: 'Débutant' },
+  intermediaire: { icon: TrendingUp, label: 'Intermédiaire' },
+  avance:        { icon: Zap,        label: 'Avancé' },
+};
 
 export default function LearningPathPage() {
   const { goalId } = useParams();
@@ -101,7 +106,16 @@ export default function LearningPathPage() {
       <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="badge badge-primary">{niveauLabel[course.niveau]}</span>
+            {(() => {
+              const cfg = niveauLabel[course.niveau];
+              if (!cfg) return null;
+              const NivIcon = cfg.icon;
+              return (
+                <span className="badge badge-primary flex items-center gap-1">
+                  <NivIcon className="w-3 h-3" /> {cfg.label}
+                </span>
+              );
+            })()}
             <span className="badge badge-surface">{completedModules}/{course.modules.length} modules</span>
           </div>
           <h1 className="page-title">{course.titre}</h1>
@@ -159,7 +173,7 @@ export default function LearningPathPage() {
                   'bg-surface-800 border border-surface-700 text-slate-500'
                 )}>
                   {module.statut === 'complete' ? <CheckCircle className="w-5 h-5" /> :
-                   module.is_projet ? '🏆' : module.ordre}
+                   module.is_projet ? <Trophy className="w-5 h-5" /> : module.ordre}
                 </div>
 
                 <div className="flex-1 min-w-0">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Brain, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Sparkles, Clock } from 'lucide-react';
+import { Brain, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Sparkles, Clock, FileQuestion, Target, Sprout, TrendingUp, Zap } from 'lucide-react';
 import { evaluationService } from '../../services/api';
 import Spinner from '../../components/ui/Spinner';
 import ProgressBar from '../../components/ui/ProgressBar';
@@ -176,16 +176,21 @@ export default function EvaluationPage() {
             </p>
             <div className="grid grid-cols-3 gap-4 mb-8">
               {[
-                { label: 'Questions', value: questions.length, icon: '📝' },
-                { label: 'Durée estimée', value: '5-10 min', icon: '⏱️' },
-                { label: 'Types', value: 'QCM + Ouvertes', icon: '🎯' },
-              ].map((item) => (
-                <div key={item.label} className="bg-surface-800 rounded-xl p-4 text-center">
-                  <div className="text-2xl mb-1">{item.icon}</div>
-                  <div className="text-slate-200 font-semibold text-sm">{item.value}</div>
-                  <div className="text-slate-500 text-xs">{item.label}</div>
-                </div>
-              ))}
+                { label: 'Questions',     value: questions.length, icon: FileQuestion },
+                { label: 'Durée estimée', value: '5-10 min',       icon: Clock },
+                { label: 'Types',         value: 'QCM + Ouvertes', icon: Target },
+              ].map((item) => {
+                const ItemIcon = item.icon;
+                return (
+                  <div key={item.label} className="bg-surface-800 rounded-xl p-4 text-center">
+                    <div className="flex justify-center mb-2">
+                      <ItemIcon className="w-6 h-6 text-primary-400" />
+                    </div>
+                    <div className="text-slate-200 font-semibold text-sm">{item.value}</div>
+                    <div className="text-slate-500 text-xs">{item.label}</div>
+                  </div>
+                );
+              })}
             </div>
             <button onClick={() => setPhase('questions')} className="btn-primary btn-lg w-full">
               Commencer l'évaluation
@@ -211,7 +216,13 @@ export default function EvaluationPage() {
 
   // ── Results ────────────────────────────────────────────────────────────────
   if (phase === 'results' && results) {
-    const levelLabels = { debutant: '🌱 Débutant', intermediaire: '🚀 Intermédiaire', avance: '⚡ Avancé' };
+    const LEVEL_CONFIG = {
+      debutant:      { icon: Sprout,     label: 'Débutant',       color: 'text-green-400'  },
+      intermediaire: { icon: TrendingUp, label: 'Intermédiaire',  color: 'text-blue-400'   },
+      avance:        { icon: Zap,        label: 'Avancé',         color: 'text-yellow-400' },
+    };
+    const lvl = LEVEL_CONFIG[results.niveau_estime] || LEVEL_CONFIG.debutant;
+    const LvlIcon = lvl.icon;
     return (
       <div className="min-h-screen bg-surface-950 flex items-center justify-center p-6">
         <div className="w-full max-w-2xl animate-in">
@@ -231,7 +242,10 @@ export default function EvaluationPage() {
                 <div className="text-slate-400 text-sm">Score global</div>
               </div>
               <div className="bg-surface-800 rounded-2xl p-6 text-center">
-                <div className="text-2xl font-bold text-slate-100 mb-1">{levelLabels[results.niveau_estime]}</div>
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <LvlIcon className={clsx('w-6 h-6', lvl.color)} />
+                  <div className="text-xl font-bold text-slate-100">{lvl.label}</div>
+                </div>
                 <div className="text-slate-400 text-sm">Niveau estimé</div>
               </div>
             </div>

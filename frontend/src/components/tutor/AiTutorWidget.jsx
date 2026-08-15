@@ -173,7 +173,7 @@ export default function AiTutorWidget({ context, onClose }) {
     {
       id: 0,
       role: 'assistant',
-      content: `Bonjour ! Je suis ton tuteur IA 👋\n\nJe suis là pour t'aider à comprendre "${context?.lesson_titre || 'ce sujet'}". Pose-moi une question, demande une explication ou partage ton code !`,
+      content: `Bonjour ! Je suis ton tuteur IA.\n\nJe suis là pour t'aider à comprendre "${context?.lesson_titre || 'ce sujet'}". Pose-moi une question, demande une explication ou partage ton code !`,
     },
   ]);
   const [input, setInput] = useState('');

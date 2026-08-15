@@ -6,6 +6,9 @@ import AuthLayout from './components/layout/AuthLayout';
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
+// Landing
+import LandingPage from './pages/landing/LandingPage';
+
 // Auth pages
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -38,8 +41,8 @@ export default function App() {
     >
       <AuthProvider>
         <Routes>
-          {/* Root redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Landing page publique — accessible sans auth */}
+          <Route path="/" element={<LandingPage />} />
 
           {/* Auth routes */}
           <Route element={<AuthLayout />}>
@@ -78,9 +81,7 @@ export default function App() {
           >
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/progress" element={<ProgressPage />} />
-            {/* Learning index (liste des objectifs) */}
             <Route path="/learning" element={<LearningIndexPage />} />
-            {/* Learning path (modules d'un objectif) */}
             <Route path="/learning/:goalId" element={<LearningPathPage />} />
             <Route path="/lesson/:lessonId" element={<LessonPage />} />
             <Route path="/tutor" element={<TutorPage />} />

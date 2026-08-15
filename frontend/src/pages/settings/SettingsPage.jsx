@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   User, Mail, Lock, Bell, Palette, Shield,
-  Save, Eye, EyeOff, CheckCircle, LogOut,
+  Save, Eye, EyeOff, CheckCircle, LogOut, Moon, Sun,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -312,22 +312,23 @@ export default function SettingsPage() {
                 <label className="label mb-3">Thème</label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { key: 'dark', label: '🌙 Sombre', active: true },
-                    { key: 'light', label: '☀️ Clair', active: false, soon: true },
-                  ].map(({ key, label, active, soon }) => (
+                    { key: 'dark',  label: 'Sombre', icon: Moon, active: true },
+                    { key: 'light', label: 'Clair',  icon: Sun,  active: false, soon: true },
+                  ].map(({ key, label, icon: ThemeIcon, active, soon }) => (
                     <button
                       key={key}
                       disabled={soon}
                       className={clsx(
-                        'p-4 rounded-xl border text-sm font-medium transition-all',
+                        'p-4 rounded-xl border text-sm font-medium transition-all flex items-center gap-2',
                         active
                           ? 'border-indigo-500 bg-indigo-600/20 text-indigo-300'
                           : 'border-slate-700 bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'
                       )}
                     >
+                      <ThemeIcon className="w-4 h-4" />
                       {label}
-                      {soon && <span className="ml-2 text-xs text-slate-600">(bientôt)</span>}
-                      {active && <CheckCircle className="w-4 h-4 inline ml-2 text-indigo-400" />}
+                      {soon && <span className="ml-auto text-xs text-slate-600">(bientôt)</span>}
+                      {active && <CheckCircle className="w-4 h-4 inline ml-auto text-indigo-400" />}
                     </button>
                   ))}
                 </div>

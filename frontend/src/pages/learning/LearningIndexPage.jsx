@@ -1,27 +1,44 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Plus, ChevronRight, Sparkles, Target, CheckCircle, PlayCircle } from 'lucide-react';
+import {
+  BookOpen, Plus, ChevronRight, Sparkles, Target, CheckCircle, PlayCircle,
+  Globe, Server, BarChart2, Cpu, Rocket, Smartphone, Shield, Star,
+  Sprout, TrendingUp, Zap,
+} from 'lucide-react';
 import { goalService } from '../../services/api';
 import Spinner from '../../components/ui/Spinner';
 import ProgressBar from '../../components/ui/ProgressBar';
 import EmptyState from '../../components/ui/EmptyState';
 import clsx from 'clsx';
 
-const DOMAIN_EMOJI = {
-  web_backend: '⚙️',
-  web_frontend: '🎨',
-  data_science: '📊',
-  machine_learning: '🤖',
-  devops: '🚀',
-  mobile: '📱',
-  securite: '🔒',
-  autre: '✨',
+// Icônes par domaine
+const DOMAIN_ICON = {
+  web_backend:      Server,
+  web_frontend:     Globe,
+  data_science:     BarChart2,
+  machine_learning: Cpu,
+  devops:           Rocket,
+  mobile:           Smartphone,
+  securite:         Shield,
+  autre:            Star,
 };
 
-const NIVEAU_LABEL = {
-  debutant: '🌱 Débutant',
-  intermediaire: '🚀 Intermédiaire',
-  avance: '⚡ Avancé',
+// Couleur d'accent par domaine
+const DOMAIN_COLOR = {
+  web_backend:      'text-indigo-400 bg-indigo-600/15 border-indigo-600/20',
+  web_frontend:     'text-orange-400 bg-orange-500/15 border-orange-500/20',
+  data_science:     'text-green-400 bg-green-500/15 border-green-500/20',
+  machine_learning: 'text-purple-400 bg-purple-500/15 border-purple-500/20',
+  devops:           'text-blue-400 bg-blue-500/15 border-blue-500/20',
+  mobile:           'text-cyan-400 bg-cyan-500/15 border-cyan-500/20',
+  securite:         'text-red-400 bg-red-500/15 border-red-500/20',
+  autre:            'text-yellow-400 bg-yellow-500/15 border-yellow-500/20',
+};
+
+const NIVEAU_CONFIG = {
+  debutant:      { icon: Sprout,     label: 'Débutant',      color: 'text-green-400'  },
+  intermediaire: { icon: TrendingUp, label: 'Intermédiaire', color: 'text-blue-400'   },
+  avance:        { icon: Zap,        label: 'Avancé',        color: 'text-yellow-400' },
 };
 
 export default function LearningIndexPage() {
@@ -93,9 +110,15 @@ export default function LearningIndexPage() {
             >
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 {/* Domain icon */}
-                <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl shrink-0">
-                  {DOMAIN_EMOJI[goal.domaine] || '📚'}
-                </div>
+                {(() => {
+                  const DomainIcon = DOMAIN_ICON[goal.domaine] || Star;
+                  const colorClass = DOMAIN_COLOR[goal.domaine] || 'text-slate-400 bg-slate-800 border-slate-700';
+                  return (
+                    <div className={clsx('w-14 h-14 rounded-2xl border flex items-center justify-center shrink-0', colorClass)}>
+                      <DomainIcon className="w-6 h-6" />
+                    </div>
+                  );
+                })()}
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
@@ -103,7 +126,17 @@ export default function LearningIndexPage() {
                     {goal.technologie && (
                       <span className="badge badge-primary">{goal.technologie}</span>
                     )}
-                    <span className="badge badge-surface">{NIVEAU_LABEL[goal.niveau]}</span>
+                    {(() => {
+                      const cfg = NIVEAU_CONFIG[goal.niveau];
+                      if (!cfg) return null;
+                      const NivIcon = cfg.icon;
+                      return (
+                        <span className="badge badge-surface flex items-center gap-1">
+                          <NivIcon className={clsx('w-3 h-3', cfg.color)} />
+                          {cfg.label}
+                        </span>
+                      );
+                    })()}
                     {goal.statut === 'actif' && (
                       <span className="badge badge-success">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />

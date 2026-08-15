@@ -160,7 +160,7 @@ export default function QuizPage() {
             <Trophy className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-slate-50 mb-1">
-            {passed ? 'Bravo ! 🎉' : 'Continue comme ça !'}
+            {passed ? 'Bravo !' : 'Continue comme ça !'}
           </h1>
           <p className="text-slate-400 mb-6">
             {passed

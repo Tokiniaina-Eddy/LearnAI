@@ -39,7 +39,7 @@ async def read_items(skip: int = 0, limit: int = 10):
     },
     {
       type: 'info',
-      titre: '💡 Astuce',
+      titre: 'Astuce',
       texte: 'Si un query parameter n\'a pas de valeur par défaut, il devient **obligatoire**. Avec une valeur par défaut, il devient optionnel.',
     },
     {
@@ -132,10 +132,10 @@ export default function LessonPage() {
     try {
       await progressService.markLesson(lessonId);
       setCompleted(true);
-      toast.success('Leçon complétée ! 🎉');
+      toast.success('Leçon complétée !');
     } catch {
       setCompleted(true); // optimistic in dev
-      toast.success('Leçon complétée ! 🎉');
+      toast.success('Leçon complétée !');
     } finally {
       setCompleting(false);
     }

@@ -1,29 +1,29 @@
 import { useState } from 'react';
-import { Clock, Brain, Calendar } from 'lucide-react';
+import { Clock, Brain, Calendar, Sprout, Rocket, Zap, Eye, Wrench, BookOpen, Shuffle } from 'lucide-react';
 import { profileService } from '../../../services/api';
 import Spinner from '../../../components/ui/Spinner';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
 const LEVELS = [
-  { value: 'debutant', label: 'Débutant', desc: 'Je commence depuis zéro', emoji: '🌱' },
-  { value: 'intermediaire', label: 'Intermédiaire', desc: 'J\'ai quelques bases', emoji: '🚀' },
-  { value: 'avance', label: 'Avancé', desc: 'Je maîtrise les fondamentaux', emoji: '⚡' },
+  { value: 'debutant',      label: 'Débutant',       desc: 'Je commence depuis zéro',        icon: Sprout,  color: 'text-green-400'  },
+  { value: 'intermediaire', label: 'Intermédiaire',   desc: "J'ai quelques bases",            icon: Rocket,  color: 'text-blue-400'   },
+  { value: 'avance',        label: 'Avancé',          desc: 'Je maîtrise les fondamentaux',   icon: Zap,     color: 'text-yellow-400' },
 ];
 
 const TIME_OPTIONS = [
-  { value: 15, label: '15 min / jour' },
-  { value: 30, label: '30 min / jour' },
-  { value: 60, label: '1h / jour' },
-  { value: 120, label: '2h / jour' },
-  { value: 180, label: '3h+ / jour' },
+  { value: 15,  label: '15 min / jour' },
+  { value: 30,  label: '30 min / jour' },
+  { value: 60,  label: '1h / jour'     },
+  { value: 120, label: '2h / jour'     },
+  { value: 180, label: '3h+ / jour'    },
 ];
 
 const PREFERENCES = [
-  { value: 'visual', label: '👁️ Visuel', desc: 'Schémas et exemples' },
-  { value: 'pratique', label: '🛠️ Pratique', desc: 'Exercices et projets' },
-  { value: 'theorique', label: '📚 Théorique', desc: 'Explications détaillées' },
-  { value: 'mixte', label: '🔀 Mixte', desc: 'Un peu de tout' },
+  { value: 'visual',    icon: Eye,     label: 'Visuel',    desc: 'Schémas et exemples'      },
+  { value: 'pratique',  icon: Wrench,  label: 'Pratique',  desc: 'Exercices et projets'     },
+  { value: 'theorique', icon: BookOpen,label: 'Théorique', desc: 'Explications détaillées'  },
+  { value: 'mixte',     icon: Shuffle, label: 'Mixte',     desc: 'Un peu de tout'           },
 ];
 
 export default function LearningProfileStep({ onDone }) {
@@ -71,23 +71,26 @@ export default function LearningProfileStep({ onDone }) {
           <Brain className="w-4 h-4 text-primary-400" /> Ton niveau actuel
         </label>
         <div className="grid grid-cols-3 gap-3 mt-2">
-          {LEVELS.map((l) => (
-            <button
-              key={l.value}
-              type="button"
-              onClick={() => setForm({ ...form, niveau: l.value })}
-              className={clsx(
-                'flex flex-col items-center gap-1 p-4 rounded-xl border text-center transition-all duration-200',
-                form.niveau === l.value
-                  ? 'border-primary-500 bg-primary-600/20 text-slate-100'
-                  : 'border-surface-700 bg-surface-800 text-slate-400 hover:border-surface-600 hover:text-slate-200'
-              )}
-            >
-              <span className="text-2xl">{l.emoji}</span>
-              <span className="text-sm font-medium">{l.label}</span>
-              <span className="text-xs text-slate-500">{l.desc}</span>
-            </button>
-          ))}
+          {LEVELS.map((l) => {
+              const LvlIcon = l.icon;
+              return (
+                <button
+                  key={l.value}
+                  type="button"
+                  onClick={() => setForm({ ...form, niveau: l.value })}
+                  className={clsx(
+                    'flex flex-col items-center gap-1 p-4 rounded-xl border text-center transition-all duration-200',
+                    form.niveau === l.value
+                      ? 'border-primary-500 bg-primary-600/20 text-slate-100'
+                      : 'border-surface-700 bg-surface-800 text-slate-400 hover:border-surface-600 hover:text-slate-200'
+                  )}
+                >
+                  <LvlIcon className={clsx('w-6 h-6', l.color)} />
+                  <span className="text-sm font-medium">{l.label}</span>
+                  <span className="text-xs text-slate-500">{l.desc}</span>
+                </button>
+              );
+            })}
         </div>
         {errors.niveau && <p className="error-msg mt-2">{errors.niveau}</p>}
       </div>
@@ -120,25 +123,30 @@ export default function LearningProfileStep({ onDone }) {
       <div>
         <label className="label">Style d'apprentissage préféré</label>
         <div className="grid grid-cols-2 gap-3 mt-2">
-          {PREFERENCES.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              onClick={() => setForm({ ...form, preferences: p.value })}
-              className={clsx(
-                'flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-200',
-                form.preferences === p.value
-                  ? 'border-primary-500 bg-primary-600/20 text-slate-100'
-                  : 'border-surface-700 bg-surface-800 text-slate-400 hover:border-surface-600'
-              )}
-            >
-              <span className="text-lg">{p.label.split(' ')[0]}</span>
-              <div>
-                <p className="text-sm font-medium">{p.label.split(' ').slice(1).join(' ')}</p>
-                <p className="text-xs text-slate-500">{p.desc}</p>
-              </div>
-            </button>
-          ))}
+          {PREFERENCES.map((p) => {
+              const PrefIcon = p.icon;
+              return (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setForm({ ...form, preferences: p.value })}
+                  className={clsx(
+                    'flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-200',
+                    form.preferences === p.value
+                      ? 'border-primary-500 bg-primary-600/20 text-slate-100'
+                      : 'border-surface-700 bg-surface-800 text-slate-400 hover:border-surface-600'
+                  )}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center shrink-0">
+                    <PrefIcon className="w-4 h-4 text-primary-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{p.label}</p>
+                    <p className="text-xs text-slate-500">{p.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
         </div>
       </div>
 

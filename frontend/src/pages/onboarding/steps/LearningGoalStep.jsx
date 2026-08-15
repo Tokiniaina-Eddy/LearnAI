@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import { Target, ArrowLeft, Sparkles } from 'lucide-react';
+import { Target, ArrowLeft, Sparkles, Globe, Server, BarChart2, Cpu, Rocket, Smartphone, Shield, Star } from 'lucide-react';
 import { goalService } from '../../../services/api';
 import Spinner from '../../../components/ui/Spinner';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 
 const DOMAINS = [
-  { value: 'web_frontend', label: 'Frontend Web', emoji: '🎨' },
-  { value: 'web_backend', label: 'Backend Web', emoji: '⚙️' },
-  { value: 'data_science', label: 'Data Science', emoji: '📊' },
-  { value: 'machine_learning', label: 'Machine Learning', emoji: '🤖' },
-  { value: 'devops', label: 'DevOps', emoji: '🚀' },
-  { value: 'mobile', label: 'Développement Mobile', emoji: '📱' },
-  { value: 'securite', label: 'Cybersécurité', emoji: '🔒' },
-  { value: 'autre', label: 'Autre', emoji: '✨' },
+  { value: 'web_frontend',     label: 'Frontend Web',        icon: Globe,      color: 'text-orange-400' },
+  { value: 'web_backend',      label: 'Backend Web',         icon: Server,     color: 'text-indigo-400' },
+  { value: 'data_science',     label: 'Data Science',        icon: BarChart2,  color: 'text-green-400'  },
+  { value: 'machine_learning', label: 'Machine Learning',    icon: Cpu,        color: 'text-purple-400' },
+  { value: 'devops',           label: 'DevOps',              icon: Rocket,     color: 'text-blue-400'   },
+  { value: 'mobile',           label: 'Développement Mobile',icon: Smartphone, color: 'text-cyan-400'   },
+  { value: 'securite',         label: 'Cybersécurité',       icon: Shield,     color: 'text-red-400'    },
+  { value: 'autre',            label: 'Autre',               icon: Star,       color: 'text-yellow-400' },
 ];
 
 const SUGGESTIONS = [
@@ -68,22 +68,27 @@ export default function LearningGoalStep({ onDone, onBack }) {
       <div>
         <label className="label">Domaine</label>
         <div className="grid grid-cols-4 gap-2 mt-2">
-          {DOMAINS.map((d) => (
-            <button
-              key={d.value}
-              type="button"
-              onClick={() => setForm({ ...form, domaine: d.value })}
-              className={clsx(
-                'flex flex-col items-center gap-1 p-3 rounded-xl border text-center text-xs font-medium transition-all duration-200',
-                form.domaine === d.value
-                  ? 'border-primary-500 bg-primary-600/20 text-slate-100'
-                  : 'border-surface-700 bg-surface-800 text-slate-400 hover:border-surface-600 hover:text-slate-200'
-              )}
-            >
-              <span className="text-xl">{d.emoji}</span>
-              <span>{d.label}</span>
-            </button>
-          ))}
+          {DOMAINS.map((d) => {
+              const DomIcon = d.icon;
+              return (
+                <button
+                  key={d.value}
+                  type="button"
+                  onClick={() => setForm({ ...form, domaine: d.value })}
+                  className={clsx(
+                    'flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center text-xs font-medium transition-all duration-200',
+                    form.domaine === d.value
+                      ? 'border-primary-500 bg-primary-600/20 text-slate-100'
+                      : 'border-surface-700 bg-surface-800 text-slate-400 hover:border-surface-600 hover:text-slate-200'
+                  )}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-slate-700/60 flex items-center justify-center">
+                    <DomIcon className={clsx('w-4 h-4', d.color)} />
+                  </div>
+                  <span>{d.label}</span>
+                </button>
+              );
+            })}
         </div>
         {errors.domaine && <p className="error-msg mt-1">{errors.domaine}</p>}
       </div>

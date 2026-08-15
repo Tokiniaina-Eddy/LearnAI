@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BookOpen, Target, Zap, Clock, TrendingUp, ChevronRight,
-  Flame, Star, Award, PlayCircle, BarChart2,
+  Flame, Star, Award, PlayCircle, BarChart2, FileQuestion, Code2,
 } from 'lucide-react';
 import { dashboardService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -52,7 +52,11 @@ function StatCard({ icon: Icon, label, value, sub, color = 'primary' }) {
   );
 }
 
-const typeIcon = { lesson: '📖', quiz: '✅', exercise: '⚡' };
+const TYPE_ICON = {
+  lesson:   <BookOpen className="w-4 h-4 text-primary-400" />,
+  quiz:     <FileQuestion className="w-4 h-4 text-warning-500" />,
+  exercise: <Code2 className="w-4 h-4 text-accent-400" />,
+};
 const typeLabel = { lesson: 'Leçon', quiz: 'Quiz', exercise: 'Exercice' };
 
 export default function DashboardPage() {
@@ -91,7 +95,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="page-title">
-            {greeting}, {user?.nom?.split(' ')[0] || 'là'} 👋
+            {greeting}, {user?.nom?.split(' ')[0] || 'là'}
           </h1>
           <p className="page-subtitle">Voici où tu en es dans ton apprentissage</p>
         </div>
@@ -252,7 +256,9 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {d.historique_recent.map((h, i) => (
               <div key={i} className="flex items-center gap-3">
-                <span className="text-lg">{typeIcon[h.type]}</span>
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 shrink-0">
+                  {TYPE_ICON[h.type]}
+                </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-slate-300 truncate">{h.activite}</p>
                   <p className="text-xs text-slate-600">{h.date}</p>
