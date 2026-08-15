@@ -48,11 +48,17 @@ export default function GoogleCallbackPage() {
     }
 
     // Stocker le token et charger le profil
+    const isNewUser = searchParams.get('new') === 'true';
+
     loginWithToken(token)
       .then((user) => {
         toast.success(`Bienvenue, ${user.nom} !`);
-        // Si l'utilisateur n'a pas de profil, rediriger vers l'onboarding
-        navigate('/dashboard', { replace: true });
+        // Nouveau compte → onboarding, compte existant → dashboard
+        if (isNewUser) {
+          navigate('/onboarding/profile', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       })
       .catch(() => {
         toast.error('Session invalide. Veuillez réessayer.');

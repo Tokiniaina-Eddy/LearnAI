@@ -641,6 +641,8 @@ def google_callback(code: str | None = None, error: str | None = None, state: st
     if not user:
         user = db.scalar(select(User).where(User.email == email))
 
+    is_new_user = False
+
     if user:
         # Compte existant : mettre à jour les infos Google si nécessaire
         if not user.google_id:
@@ -655,6 +657,7 @@ def google_callback(code: str | None = None, error: str | None = None, state: st
         db.refresh(user)
     else:
         # Nouveau compte via Google
+        is_new_user = True
         user = User(
             nom=nom,
             email=email,
@@ -670,7 +673,9 @@ def google_callback(code: str | None = None, error: str | None = None, state: st
         db.refresh(user)
 
     # Générer le JWT LearnAI et rediriger vers le frontend
+    # is_new_user=true → le frontend redirigera vers l'onboarding
     jwt_token = create_access_token(user.id)
+    new_param = "&new=true" if is_new_user else ""
     return RedirectResponse(
-        url=f"{frontend_url}/auth/google/callback?token={jwt_token}"
+        url=f"{frontend_url}/auth/google/callback?token={jwt_token}{new_param}"
     )

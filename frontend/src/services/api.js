@@ -100,18 +100,22 @@ export const exerciseService = {
 
 // ── Progress ───────────────────────────────────────────────────────────────
 export const progressService = {
-  list:   ()              => api.get('/progress'),
-  update: (lessonId, data) => api.put(`/progress/${lessonId}`, data),
+  list:        ()               => api.get('/progress'),
+  get:         ()               => api.get('/progress'),
+  update:      (lessonId, data) => api.put(`/progress/${lessonId}`, data),
+  markLesson:  (lessonId, data) => api.put(`/progress/${lessonId}`, data),
 };
 
 // ── Skills ─────────────────────────────────────────────────────────────────
 export const skillService = {
-  list: (goalId) => api.get(`/goals/${goalId}/skills`),
+  list:      (goalId) => api.get(`/goals/${goalId}/skills`),
+  getByGoal: (goalId) => api.get(`/goals/${goalId}/skills`),
 };
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
 export const dashboardService = {
-  get: () => api.get('/dashboard'),
+  get:        () => api.get('/dashboard'),
+  getSummary: () => api.get('/dashboard'),
 };
 
 // ── Tutor ──────────────────────────────────────────────────────────────────
