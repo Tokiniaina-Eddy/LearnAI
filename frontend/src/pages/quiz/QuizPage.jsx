@@ -95,7 +95,7 @@ export default function QuizPage() {
   useEffect(() => {
     quizService.get(quizId)
       .then((res) => setQuiz(res.data))
-      .catch(() => setQuiz(MOCK_QUIZ))
+      .catch(() => setQuiz(MOCK_QUIZ))  // fallback mock when backend offline
       .finally(() => setLoading(false));
   }, [quizId]);
 

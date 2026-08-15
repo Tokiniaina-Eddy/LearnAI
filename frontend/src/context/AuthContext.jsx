@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/api';
 
-// ── DEV MODE : mock user, pas de backend requis ───────────────────────────────
-const DEV_MODE = true;
+// ── DEV_MODE : mettre à true pour bypasser le backend (tests UI sans serveur) ─
+const DEV_MODE = false;
 
 const MOCK_USER = {
   id: 1,
@@ -34,7 +34,6 @@ export function AuthProvider({ children }) {
       if (!token) { setLoading(false); return; }
 
       if (DEV_MODE) {
-        // En mode DEV, le token mock est toujours valide
         setLoading(false);
         return;
       }
@@ -44,7 +43,11 @@ export function AuthProvider({ children }) {
         setUser(data);
         localStorage.setItem('learnai_user', JSON.stringify(data));
       } catch {
-        logout();
+        // Token expired or invalid — clear session
+        localStorage.removeItem('learnai_token');
+        localStorage.removeItem('learnai_user');
+        setToken(null);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -54,14 +57,14 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (credentials) => {
     if (DEV_MODE) {
-      // Accepte n'importe quel email/password en mode DEV
-      const user = { ...MOCK_USER, email: credentials.email || MOCK_USER.email };
+      const u = { ...MOCK_USER, email: credentials.email || MOCK_USER.email };
       localStorage.setItem('learnai_token', MOCK_TOKEN);
-      localStorage.setItem('learnai_user', JSON.stringify(user));
+      localStorage.setItem('learnai_user', JSON.stringify(u));
       setToken(MOCK_TOKEN);
-      setUser(user);
-      return user;
+      setUser(u);
+      return u;
     }
+    // Real backend call
     const { data } = await authService.login(credentials);
     localStorage.setItem('learnai_token', data.access_token);
     localStorage.setItem('learnai_user', JSON.stringify(data.user));
@@ -72,12 +75,12 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (payload) => {
     if (DEV_MODE) {
-      const user = { ...MOCK_USER, nom: payload.nom || MOCK_USER.nom, email: payload.email || MOCK_USER.email };
+      const u = { ...MOCK_USER, nom: payload.nom || MOCK_USER.nom, email: payload.email || MOCK_USER.email };
       localStorage.setItem('learnai_token', MOCK_TOKEN);
-      localStorage.setItem('learnai_user', JSON.stringify(user));
+      localStorage.setItem('learnai_user', JSON.stringify(u));
       setToken(MOCK_TOKEN);
-      setUser(user);
-      return user;
+      setUser(u);
+      return u;
     }
     const { data } = await authService.register(payload);
     localStorage.setItem('learnai_token', data.access_token);
