@@ -120,5 +120,7 @@ export const dashboardService = {
 
 // ── Tutor ──────────────────────────────────────────────────────────────────
 export const tutorService = {
-  chat: (data) => api.post('/tutor/chat', data),
+  chat:        (data) => api.post('/tutor/chat', data),
+  sendMessage: (data) => api.post('/tutor/chat', data),
+  getHistory:  (lessonId) => api.get(`/tutor/history/${lessonId}`),
 };
