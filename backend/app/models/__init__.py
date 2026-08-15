@@ -1,5 +1,6 @@
 # Import all models so Alembic autogenerate picks them up
 from app.models.user import User
+from app.models.otp_code import OTPCode
 from app.models.learning_profile import LearningProfile
 from app.models.learning_goal import LearningGoal
 from app.models.course import Course, Module, Lesson

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Spinner from '../../components/ui/Spinner';
+import GoogleButton from '../../components/ui/GoogleButton';
 import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
@@ -31,9 +32,10 @@ export default function RegisterPage() {
     if (!validate()) return;
     setLoading(true);
     try {
-      await register({ nom: form.nom, email: form.email, password: form.password });
-      toast.success('Compte créé avec succès !');
-      navigate('/onboarding/profile');
+      const result = await register({ nom: form.nom, email: form.email, password: form.password });
+      toast.success('Compte créé ! Vérifiez votre email.');
+      // Rediriger vers la page de vérification en passant l'email
+      navigate('/verify-email', { state: { email: result?.email || form.email } });
     } catch (err) {
       const msg = err.response?.data?.detail || 'Une erreur est survenue';
       toast.error(msg);
@@ -98,7 +100,7 @@ export default function RegisterPage() {
           {errors.email && <p className="error-msg">{errors.email}</p>}
         </div>
 
-        {/* Password */}
+        {/* Mot de passe */}
         <div>
           <label htmlFor="password" className="label">Mot de passe</label>
           <div className="relative">
@@ -125,7 +127,10 @@ export default function RegisterPage() {
             <div className="mt-2">
               <div className="flex gap-1 mb-1">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className={`h-1 flex-1 rounded-full ${i <= strength ? strengthColor : 'bg-surface-700'} transition-all`} />
+                  <div
+                    key={i}
+                    className={`h-1 flex-1 rounded-full ${i <= strength ? strengthColor : 'bg-surface-700'} transition-all`}
+                  />
                 ))}
               </div>
               <p className="text-xs text-slate-500">{strengthLabel}</p>
@@ -134,7 +139,7 @@ export default function RegisterPage() {
           {errors.password && <p className="error-msg">{errors.password}</p>}
         </div>
 
-        {/* Confirm password */}
+        {/* Confirmer mot de passe */}
         <div>
           <label htmlFor="confirmPassword" className="label">Confirmer le mot de passe</label>
           <div className="relative">
@@ -159,13 +164,26 @@ export default function RegisterPage() {
         )}
 
         <button type="submit" className="btn-primary w-full btn-lg" disabled={loading}>
-          {loading ? <Spinner size="sm" /> : "Créer mon compte"}
+          {loading ? <Spinner size="sm" /> : 'Créer mon compte'}
         </button>
       </form>
 
+      {/* Divider */}
+      <div className="flex items-center gap-3 my-6">
+        <div className="flex-1 h-px bg-surface-700" />
+        <span className="text-slate-500 text-xs font-medium">ou</span>
+        <div className="flex-1 h-px bg-surface-700" />
+      </div>
+
+      {/* Bouton Google */}
+      <GoogleButton label="Continuer avec Google" />
+
       <p className="text-center text-slate-400 text-sm mt-6">
         Déjà un compte ?{' '}
-        <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+        <Link
+          to="/login"
+          className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
+        >
           Se connecter
         </Link>
       </p>

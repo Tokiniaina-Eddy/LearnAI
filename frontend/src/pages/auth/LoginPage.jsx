@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Spinner from '../../components/ui/Spinner';
+import GoogleButton from '../../components/ui/GoogleButton';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -34,7 +35,16 @@ export default function LoginPage() {
       toast.success('Connexion réussie !');
       navigate(from, { replace: true });
     } catch (err) {
+      const status = err.response?.status;
       const msg = err.response?.data?.detail || 'Email ou mot de passe incorrect';
+
+      // Email non vérifié : proposer le renvoi de code
+      if (status === 403 && err.response?.headers?.['x-requires-verification']) {
+        toast.error("Veuillez vérifier votre adresse email avant de vous connecter.");
+        navigate('/verify-email', { state: { email: form.email } });
+        return;
+      }
+
       toast.error(msg);
       setErrors({ general: msg });
     } finally {
@@ -66,11 +76,14 @@ export default function LoginPage() {
           {errors.email && <p className="error-msg">{errors.email}</p>}
         </div>
 
-        {/* Password */}
+        {/* Mot de passe */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label htmlFor="password" className="label mb-0">Mot de passe</label>
-            <Link to="/forgot-password" className="text-xs text-primary-400 hover:text-primary-300 transition-colors">
+            <Link
+              to="/forgot-password"
+              className="text-xs text-primary-400 hover:text-primary-300 transition-colors"
+            >
               Mot de passe oublié ?
             </Link>
           </div>
@@ -108,9 +121,22 @@ export default function LoginPage() {
         </button>
       </form>
 
+      {/* Divider */}
+      <div className="flex items-center gap-3 my-6">
+        <div className="flex-1 h-px bg-surface-700" />
+        <span className="text-slate-500 text-xs font-medium">ou</span>
+        <div className="flex-1 h-px bg-surface-700" />
+      </div>
+
+      {/* Bouton Google */}
+      <GoogleButton />
+
       <p className="text-center text-slate-400 text-sm mt-6">
         Pas encore de compte ?{' '}
-        <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+        <Link
+          to="/register"
+          className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
+        >
           Créer un compte
         </Link>
       </p>

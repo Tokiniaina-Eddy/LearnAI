@@ -13,6 +13,9 @@ import LandingPage from './pages/landing/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import GoogleCallbackPage from './pages/auth/GoogleCallbackPage';
 
 // Onboarding
 import OnboardingPage from './pages/onboarding/OnboardingPage';
@@ -41,15 +44,20 @@ export default function App() {
     >
       <AuthProvider>
         <Routes>
-          {/* Landing page publique — accessible sans auth */}
+          {/* Landing page publique */}
           <Route path="/" element={<LandingPage />} />
 
-          {/* Auth routes */}
+          {/* Auth routes — layout split-screen */}
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Route>
+
+          {/* Callback Google OAuth — page standalone (sans AuthLayout) */}
+          <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
 
           {/* Onboarding (protected, no sidebar) */}
           <Route

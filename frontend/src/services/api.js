@@ -31,25 +31,30 @@ api.interceptors.response.use(
 export default api;
 
 // ── Auth ───────────────────────────────────────────────────────────────────
-// POST /api/v1/auth/register  → TokenOut { access_token, user }
-// POST /api/v1/auth/login     → TokenOut { access_token, user }
-// GET  /api/v1/auth/me        → UserOut
-// PUT  /api/v1/auth/me        → UserOut
-// POST /api/v1/auth/forgot-password
-// POST /api/v1/auth/reset-password
+// POST /api/v1/auth/register             → RegisterPendingResponse { message, email }
+// POST /api/v1/auth/verify-email         → TokenOut { access_token, user }
+// POST /api/v1/auth/resend-verification  → MessageResponse { message }
+// POST /api/v1/auth/login                → TokenOut { access_token, user }
+// GET  /api/v1/auth/me                   → UserOut
+// PUT  /api/v1/auth/me                   → UserOut
+// POST /api/v1/auth/forgot-password      → MessageResponse { message }
+// POST /api/v1/auth/verify-reset-otp     → MessageResponse { message }
+// POST /api/v1/auth/reset-password       → MessageResponse { message }
+// GET  /api/v1/auth/google               → Redirect Google OAuth
+// GET  /api/v1/auth/google/callback      → Redirect frontend with JWT
 export const authService = {
-  register:       (data)  => api.post('/auth/register', data),
-  login:          (data)  => api.post('/auth/login', data),
-  me:             ()      => api.get('/auth/me'),
-  updateMe:       (data)  => api.put('/auth/me', data),
-  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
-  resetPassword:  (data)  => api.post('/auth/reset-password', data),
+  register:           (data)        => api.post('/auth/register', data),
+  verifyEmail:        (data)        => api.post('/auth/verify-email', data),
+  resendVerification: (email)       => api.post('/auth/resend-verification', { email }),
+  login:              (data)        => api.post('/auth/login', data),
+  me:                 ()            => api.get('/auth/me'),
+  updateMe:           (data)        => api.put('/auth/me', data),
+  forgotPassword:     (email)       => api.post('/auth/forgot-password', { email }),
+  verifyResetOtp:     (data)        => api.post('/auth/verify-reset-otp', data),
+  resetPassword:      (data)        => api.post('/auth/reset-password', data),
 };
 
 // ── Profile ────────────────────────────────────────────────────────────────
-// GET  /api/v1/profile
-// POST /api/v1/profile
-// PUT  /api/v1/profile
 export const profileService = {
   get:    ()     => api.get('/profile'),
   create: (data) => api.post('/profile', data),
@@ -57,11 +62,6 @@ export const profileService = {
 };
 
 // ── Learning Goals ─────────────────────────────────────────────────────────
-// GET    /api/v1/goals
-// POST   /api/v1/goals
-// GET    /api/v1/goals/:id
-// PUT    /api/v1/goals/:id
-// DELETE /api/v1/goals/:id
 export const goalService = {
   list:   ()          => api.get('/goals'),
   create: (data)      => api.post('/goals', data),
@@ -71,18 +71,12 @@ export const goalService = {
 };
 
 // ── Evaluation ─────────────────────────────────────────────────────────────
-// POST /api/v1/goals/:goalId/evaluation/generate
-// POST /api/v1/goals/:goalId/evaluation/submit
 export const evaluationService = {
   generate: (goalId)          => api.post(`/goals/${goalId}/evaluation/generate`),
   submit:   (goalId, answers) => api.post(`/goals/${goalId}/evaluation/submit`, { answers }),
 };
 
 // ── Courses ────────────────────────────────────────────────────────────────
-// POST /api/v1/goals/:goalId/course/generate
-// GET  /api/v1/goals/:goalId/course
-// GET  /api/v1/modules/:moduleId
-// GET  /api/v1/lessons/:lessonId
 export const courseService = {
   generate:  (goalId)   => api.post(`/goals/${goalId}/course/generate`),
   get:       (goalId)   => api.get(`/goals/${goalId}/course`),
@@ -91,49 +85,36 @@ export const courseService = {
 };
 
 // ── Quizzes ────────────────────────────────────────────────────────────────
-// GET  /api/v1/lessons/:lessonId/quiz
-// GET  /api/v1/quizzes/:quizId
-// GET  /api/v1/quizzes/module/:moduleId
-// POST /api/v1/quizzes/:quizId/submit
 export const quizService = {
-  getByLesson: (lessonId)          => api.get(`/lessons/${lessonId}/quiz`),
-  getByModule: (moduleId)          => api.get(`/quizzes/module/${moduleId}`),
-  get:         (quizId)            => api.get(`/quizzes/${quizId}`),
-  submit:      (quizId, answers)   => api.post(`/quizzes/${quizId}/submit`, { answers }),
+  getByLesson: (lessonId)        => api.get(`/lessons/${lessonId}/quiz`),
+  getByModule: (moduleId)        => api.get(`/quizzes/module/${moduleId}`),
+  get:         (quizId)          => api.get(`/quizzes/${quizId}`),
+  submit:      (quizId, answers) => api.post(`/quizzes/${quizId}/submit`, { answers }),
 };
 
 // ── Exercises ──────────────────────────────────────────────────────────────
-// GET  /api/v1/lessons/:lessonId/exercises
-// POST /api/v1/exercises/:exerciseId/submit
 export const exerciseService = {
-  getByLesson: (lessonId)         => api.get(`/lessons/${lessonId}/exercises`),
-  submit:      (exerciseId, code) => api.post(`/exercises/${exerciseId}/submit`, { code }),
+  getByLesson: (lessonId)        => api.get(`/lessons/${lessonId}/exercises`),
+  submit:      (exerciseId, sol) => api.post(`/exercises/${exerciseId}/submit`, { solution: sol }),
 };
 
 // ── Progress ───────────────────────────────────────────────────────────────
-// GET  /api/v1/progress
-// POST /api/v1/progress/lessons/:lessonId/complete
 export const progressService = {
-  get:        ()         => api.get('/progress'),
-  markLesson: (lessonId) => api.post(`/progress/lessons/${lessonId}/complete`),
+  list:   ()              => api.get('/progress'),
+  update: (lessonId, data) => api.put(`/progress/${lessonId}`, data),
 };
 
 // ── Skills ─────────────────────────────────────────────────────────────────
-// GET /api/v1/goals/:goalId/skills
 export const skillService = {
-  getByGoal: (goalId) => api.get(`/goals/${goalId}/skills`),
-};
-
-// ── AI Tutor ───────────────────────────────────────────────────────────────
-// POST /api/v1/tutor/chat
-// GET  /api/v1/tutor/history/:lessonId
-export const tutorService = {
-  sendMessage: (data)      => api.post('/tutor/chat', data),
-  getHistory:  (lessonId)  => api.get(`/tutor/history/${lessonId}`),
+  list: (goalId) => api.get(`/goals/${goalId}/skills`),
 };
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
-// GET /api/v1/dashboard
 export const dashboardService = {
-  getSummary: () => api.get('/dashboard'),
+  get: () => api.get('/dashboard'),
+};
+
+// ── Tutor ──────────────────────────────────────────────────────────────────
+export const tutorService = {
+  chat: (data) => api.post('/tutor/chat', data),
 };
