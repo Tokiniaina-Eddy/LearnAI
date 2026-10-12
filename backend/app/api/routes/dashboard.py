@@ -119,10 +119,42 @@ def get_dashboard(current_user: CurrentUser, db: DBSession):
     xp = len(completed_all) * XP_PER_LESSON
     niveau_xp = _get_level(xp)
 
-    scores = [p.score for p in all_progress_global if p.score is not None]
-    score_moyen = round(sum(scores) / len(scores)) if scores else 0
+    # Calculate total time and auto-populate completed lessons missing duration
+    total_seconds = 0
+    progress_updated = False
+    for p in all_progress_global:
+        if p.temps_passe and p.temps_passe > 0:
+            total_seconds += p.temps_passe
+        elif p.statut == "complete":
+            lesson = db.get(Lesson, p.lesson_id)
+            duree_sec = (lesson.duree or 15) * 60 if lesson else 900
+            p.temps_passe = duree_sec
+            total_seconds += duree_sec
+            progress_updated = True
 
-    temps_total = sum(p.temps_passe for p in all_progress_global) // 60  # to minutes
+    scores = [p.score for p in all_progress_global if p.score is not None]
+    if scores:
+        score_moyen = round(sum(scores) / len(scores))
+    else:
+        # Fallback to UserSkill scores (from initial evaluation & quizzes)
+        user_skills_scores = [
+            us.score for us in db.scalars(
+                select(UserSkill).where(UserSkill.user_id == uid, UserSkill.score > 0)
+            ).all()
+        ]
+        if user_skills_scores:
+            score_moyen = round(sum(user_skills_scores) / len(user_skills_scores))
+            for p in completed_all:
+                if p.score is None:
+                    p.score = score_moyen
+                    progress_updated = True
+        else:
+            score_moyen = 0
+
+    if progress_updated:
+        db.commit()
+
+    temps_total = total_seconds // 60
 
     streak_dates = [p.date_completion.date() for p in completed_all if p.date_completion]
     streak = _streak(streak_dates)

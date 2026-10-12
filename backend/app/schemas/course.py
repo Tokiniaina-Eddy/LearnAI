@@ -17,13 +17,22 @@ class LessonOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class LessonDetail(LessonOut):
+class LessonDetail(BaseModel):
     """Full lesson with parsed content blocks + navigation."""
+    id: int
+    module_id: int
+    titre: str
+    contenu: Any = None
     contenu_blocks: list[dict[str, Any]] | None = None
+    ordre: int
+    duree: int
+    statut: LessonStatut
     module: dict | None = None
     lesson_precedente: dict | None = None
     lesson_suivante: dict | None = None
     quiz_id: int | None = None
+
+    model_config = {"from_attributes": True}
 
 
 # ── Module ────────────────────────────────────────────────────────────────────
@@ -39,6 +48,8 @@ class ModuleOut(BaseModel):
     has_quiz: bool = False
     quiz_statut: str | None = None
     quiz_score: float | None = None
+    is_projet: bool = False
+    mini_projet: dict | None = None
 
     model_config = {"from_attributes": True, "populate_by_name": True}
 

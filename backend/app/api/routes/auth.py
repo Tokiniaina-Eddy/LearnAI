@@ -33,7 +33,7 @@ from app.schemas.user import (
     UserCreate, UserLogin, UserOut, TokenOut, UserUpdate,
     VerifyEmailRequest, ResendOTPRequest,
     ForgotPasswordRequest, VerifyResetOTPRequest, ResetPasswordRequest,
-    MessageResponse, RegisterPendingResponse,
+    ChangePasswordRequest, MessageResponse, RegisterPendingResponse,
 )
 from app.services.email_service import send_verification_email, send_password_reset_email
 
@@ -407,6 +407,16 @@ def update_me(payload: UserUpdate, current_user: CurrentUser, db: DBSession):
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@router.post("/change-password", response_model=MessageResponse)
+def change_password(payload: ChangePasswordRequest, current_user: CurrentUser, db: DBSession):
+    """Met à jour le mot de passe de l'utilisateur authentifié."""
+    if not current_user.mot_de_passe or not verify_password(payload.current_password, current_user.mot_de_passe):
+        raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect.")
+    current_user.mot_de_passe = hash_password(payload.new_password)
+    db.commit()
+    return MessageResponse(message="Mot de passe mis à jour avec succès.")
 
 
 # ── 6. Mot de passe oublié ────────────────────────────────────────────────────

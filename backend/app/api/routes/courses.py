@@ -128,32 +128,60 @@ def get_course(goal_id: int, current_user: CurrentUser, db: DBSession):
     if not course:
         raise HTTPException(status_code=404, detail="Parcours non généré. Lance /generate d'abord.")
 
-    # Compute progression
-    total_lessons = sum(len(m.lessons) for m in course.modules)
     from app.models.progress import Progress
-    completed_progress = db.scalars(
-        select(Progress)
-        .join(Lesson)
-        .join(Module)
-        .where(Module.course_id == course.id, Progress.user_id == current_user.id, Progress.statut == "complete")
-    ).all()
-    completed_ids = {p.lesson_id for p in completed_progress}
-    progression = round(len(completed_ids) / total_lessons * 100) if total_lessons else 0
-    modules_completes = sum(1 for m in course.modules if m.statut.value == "complete")
+    from app.models.quiz import Quiz
+
+    sorted_modules = sorted(course.modules, key=lambda m: m.ordre)
+    # Regular learning modules (project is not counted in mandatory tracking)
+    regular_modules = [m for m in sorted_modules if not ("projet" in m.titre.lower() or m.ordre == len(sorted_modules))]
+    regular_modules = regular_modules if regular_modules else sorted_modules
+
+    regular_lesson_ids = [l.id for m in regular_modules for l in m.lessons]
+    completed_ids = set()
+    if regular_lesson_ids:
+        completed_ids = set(
+            db.scalars(
+                select(Progress.lesson_id).where(
+                    Progress.user_id == current_user.id,
+                    Progress.statut == "complete",
+                    Progress.lesson_id.in_(regular_lesson_ids),
+                )
+            ).all()
+        )
+
+    progression = round(len(completed_ids) / len(regular_lesson_ids) * 100) if regular_lesson_ids else 0
+    modules_completes = sum(1 for m in regular_modules if m.statut.value == "complete")
 
     # Build response dict with computed fields + quiz info per module
-    from app.models.quiz import Quiz
     modules_out = []
-    for module in sorted(course.modules, key=lambda m: m.ordre):
+    for module in sorted_modules:
         quiz = db.scalar(select(Quiz).where(Quiz.module_id == module.id))
-        has_quiz = quiz is not None
-        quiz_statut = None
+        has_quiz = True
+        is_proj = (module.ordre == len(sorted_modules) or "projet" in module.titre.lower())
+
+        # Quiz is available once all lessons of the module are completed
+        all_module_lessons_done = all(
+            l.statut.value == "complete" for l in module.lessons
+        ) if module.lessons else False
+
+        quiz_statut = "verrouille"
+        if module.statut.value == "complete":
+            quiz_statut = "complete"
+        elif all_module_lessons_done:
+            quiz_statut = "disponible"
+
+        # Check existing quiz score
+        mod_lesson_ids = [l.id for l in module.lessons]
         quiz_score = None
-        if has_quiz:
-            # Check if user has submitted this quiz (simplistic — look at skill scores proxy)
-            quiz_statut = "complete" if module.statut.value == "complete" else (
-                "disponible" if module.statut.value in ("en_cours", "complete") else "verrouille"
+        if mod_lesson_ids:
+            score_row = db.scalar(
+                select(Progress.score).where(
+                    Progress.user_id == current_user.id,
+                    Progress.lesson_id.in_(mod_lesson_ids),
+                    Progress.score.is_not(None),
+                )
             )
+            quiz_score = score_row
 
         modules_out.append({
             "id": module.id,
@@ -166,12 +194,17 @@ def get_course(goal_id: int, current_user: CurrentUser, db: DBSession):
             "has_quiz": has_quiz,
             "quiz_statut": quiz_statut,
             "quiz_score": quiz_score,
+            "is_projet": is_proj,
+            "mini_projet": {
+                "titre": f"Mini-projet : {module.titre}",
+                "description": f"Mets en pratique ce que tu as appris dans le module « {module.titre} » avec un cas concret (facultatif, non compté dans le suivi).",
+            },
         })
 
     result = CourseOut.model_validate(course)
     result.progression = progression
     result.modules_completes = modules_completes
-    result.modules_total = len(course.modules)
+    result.modules_total = len(regular_modules)
     # Override modules with enriched data
     from app.schemas.course import ModuleOut
     result.modules = [ModuleOut.model_validate(m) for m in modules_out]
@@ -187,13 +220,20 @@ def get_module(module_id: int, current_user: CurrentUser, db: DBSession):
 
 
 @router.get("/lessons/{lesson_id}", response_model=LessonDetail)
-def get_lesson(lesson_id: int, current_user: CurrentUser, db: DBSession):
+def get_lesson(lesson_id: int, current_user: CurrentUser, db: DBSession, regenerate: bool = False):
     lesson = db.get(Lesson, lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail="Leçon non trouvée")
 
-    # Generate content if not yet generated
-    if not lesson.contenu:
+    parsed_blocks = []
+    if lesson.contenu:
+        try:
+            parsed_blocks = json.loads(lesson.contenu) if isinstance(lesson.contenu, str) else (lesson.contenu or [])
+        except Exception:
+            parsed_blocks = []
+
+    # Generate content if not yet generated, explicitly requested, or if previous generation was too short (< 4 blocks)
+    if not lesson.contenu or len(parsed_blocks) < 4 or regenerate:
         module = lesson.module
         course = module.course
         goal = course.goal
@@ -210,6 +250,7 @@ def get_lesson(lesson_id: int, current_user: CurrentUser, db: DBSession):
         lesson.contenu = json.dumps(blocks, ensure_ascii=False)
         db.commit()
         db.refresh(lesson)
+        parsed_blocks = blocks
 
     # Build adjacent lessons for prev/next nav
     siblings = sorted(lesson.module.lessons, key=lambda l: l.ordre)
@@ -217,13 +258,21 @@ def get_lesson(lesson_id: int, current_user: CurrentUser, db: DBSession):
     prev_lesson = siblings[idx - 1] if idx and idx > 0 else None
     next_lesson = siblings[idx + 1] if idx is not None and idx < len(siblings) - 1 else None
 
-    parsed_blocks = json.loads(lesson.contenu) if lesson.contenu else []
+    detail = LessonDetail(
+        id=lesson.id,
+        module_id=lesson.module_id,
+        titre=lesson.titre,
+        contenu=parsed_blocks,
+        contenu_blocks=parsed_blocks,
+        ordre=lesson.ordre,
+        duree=lesson.duree,
+        statut=lesson.statut,
+    )
 
-    detail = LessonDetail.model_validate(lesson)
-    detail.contenu_blocks = parsed_blocks
-
-    # Attach navigation (not in schema strictly, use dict trick via model)
+    # Attach navigation
     result = detail.model_dump()
+    result["contenu"] = parsed_blocks
+    result["contenu_blocks"] = parsed_blocks
     result["module"] = {"id": lesson.module_id, "titre": lesson.module.titre, "cours_id": lesson.module.course_id}
     result["lesson_precedente"] = {"id": prev_lesson.id, "titre": prev_lesson.titre} if prev_lesson else None
     result["lesson_suivante"] = {"id": next_lesson.id, "titre": next_lesson.titre} if next_lesson else None

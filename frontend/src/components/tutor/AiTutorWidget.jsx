@@ -219,11 +219,12 @@ export default function AiTutorWidget({ context, onClose }) {
         content: data.response || data.message,
       }]);
     } catch {
-      // Fallback mock response
+      // Fallback response when server is unreachable
+      const topic = context?.lesson_titre || 'ce concept';
       const mockResponses = [
-        `Bonne question ! Pour "${content.toLowerCase().slice(0, 30)}…", voici ce qu'il faut retenir :\n\nEn FastAPI, tout est basé sur les annotations de type Python. Cela permet au framework de faire la validation et la documentation automatiquement.`,
-        `Je comprends ta question. Pour clarifier ce point :\n\n1. FastAPI utilise Pydantic pour la validation\n2. Les types Python servent de contrat\n3. La documentation Swagger est générée automatiquement\n\nTu veux que je développe un point en particulier ?`,
-        `C'est un concept clé ! L'idée principale est de laisser FastAPI gérer la conversion et validation des données pour toi, grâce aux annotations de type. Ça évite d'écrire du code répétitif.`,
+        `Excellente question concernant **${topic}** !\n\nVoici les points clés à retenir pour "${content.slice(0, 35)}…" :\n1. Comprends bien les principes fondamentaux avant d'entrer dans les détails d'implémentation.\n2. Pratique avec un petit exemple concret pour ancrer le fonctionnement.\n\nSouhaites-tu qu'on regarde un cas d'usage précis ensemble ?`,
+        `Je vois tout à fait ta question au sujet de **${topic}**.\n\nPour bien appréhender ce point :\n- Décompose le problème en étapes simples.\n- Vérifie chaque composant ou paramètre un par un.\n\nSur quel aspect souhaites-tu qu'on approfondisse ?`,
+        `C'est un point essentiel dans **${topic}** !\n\nLa meilleure approche consiste à tester pas à pas. Partage-moi ton code ou un cas précis si tu souhaites une analyse détaillée.`,
       ];
       setMessages((prev) => [...prev, {
         id: Date.now() + 1,

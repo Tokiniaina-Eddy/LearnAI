@@ -10,17 +10,24 @@ echo "║      LearnAI Backend             ║"
 echo "╚══════════════════════════════════╝"
 echo ""
 
-# Create venv if not exists
-if [ ! -d ".venv" ]; then
-  echo "▶ Création du virtualenv..."
-  python3 -m venv .venv
+# Choose suitable python binary (prefer stable python3.13)
+PYTHON_BIN="python3"
+if command -v python3.13 &> /dev/null; then
+  PYTHON_BIN="python3.13"
+fi
+
+# Create venv if not exists or broken
+if [ ! -d ".venv" ] || [ ! -f ".venv/bin/pip" ]; then
+  echo "▶ Création du virtualenv avec $PYTHON_BIN..."
+  rm -rf .venv
+  $PYTHON_BIN -m venv .venv
 fi
 
 # Activate
 source .venv/bin/activate
 
 echo "▶ Installation des dépendances..."
-pip install -r requirements.txt -q
+python -m pip install -r requirements.txt -q
 
 # Check .env
 if [ ! -f ".env" ]; then

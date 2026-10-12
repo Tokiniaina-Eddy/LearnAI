@@ -89,12 +89,14 @@ export default function App() {
           >
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/progress" element={<ProgressPage />} />
+            <Route path="/progress/:goalId" element={<ProgressPage />} />
             <Route path="/learning" element={<LearningIndexPage />} />
             <Route path="/learning/:goalId" element={<LearningPathPage />} />
             <Route path="/lesson/:lessonId" element={<LessonPage />} />
             <Route path="/tutor" element={<TutorPage />} />
             <Route path="/quiz/:quizId" element={<QuizPage />} />
             <Route path="/quiz/module/:moduleId" element={<QuizPage />} />
+            <Route path="/quiz/lesson/:lessonId" element={<QuizPage />} />
             <Route path="/skillmap" element={<SkillMapPage />} />
             <Route path="/skillmap/:goalId" element={<SkillMapPage />} />
             <Route path="/settings" element={<SettingsPage />} />

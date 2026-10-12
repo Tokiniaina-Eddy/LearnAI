@@ -159,7 +159,17 @@ export default function LearningIndexPage() {
                   {/* Next lesson */}
                   {goal.prochaine_lecon && (
                     <p className="text-xs text-slate-500">
-                      Prochaine leçon : <span className="text-slate-300">{goal.prochaine_lecon}</span>
+                      Prochaine leçon :{' '}
+                      {typeof goal.prochaine_lecon === 'object' ? (
+                        <Link
+                          to={`/lesson/${goal.prochaine_lecon.id}`}
+                          className="text-slate-300 hover:text-indigo-400 font-medium underline transition-colors"
+                        >
+                          {goal.prochaine_lecon.titre}
+                        </Link>
+                      ) : (
+                        <span className="text-slate-300">{goal.prochaine_lecon}</span>
+                      )}
                     </p>
                   )}
                 </div>

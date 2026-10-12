@@ -47,15 +47,15 @@ const MOCK_QUESTIONS = [
   {
     id: 5,
     type: 'mcq',
-    question: 'Dans FastAPI, comment définit-on un paramètre de chemin ?',
+    question: 'Quel est le rôle principal d\'un système de gestion de versions comme Git ?',
     options: [
-      '@app.get("/items?id={item_id}")',
-      '@app.get("/items/{item_id}")',
-      '@app.get("/items/[item_id]")',
-      '@app.get("/items/:item_id")',
+      'Compiler automatiquement le code source',
+      'Historiser les modifications et faciliter la collaboration',
+      'Héberger les bases de données de production',
+      'Exécuter les requêtes HTTP du client',
     ],
     answer: 1,
-    explication: 'FastAPI utilise la syntaxe {param} dans le chemin pour déclarer des path parameters.',
+    explication: 'Git est un outil de gestion de versions qui permet de tracer l\'historique des modifications du code et de collaborer efficacement en équipe.',
   },
 ];
 // ───────────────────────────────────────────────────────────────────────────

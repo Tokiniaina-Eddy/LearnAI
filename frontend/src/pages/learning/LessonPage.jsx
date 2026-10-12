@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, CheckCircle, BookOpen,
-  MessageSquare, FileQuestion, Lightbulb, Code2, Copy, Check,
+  MessageSquare, FileQuestion, Lightbulb, Code2, Copy, Check, AlertCircle, Sparkles, Lock,
 } from 'lucide-react';
 import { courseService, progressService } from '../../services/api';
 import Spinner from '../../components/ui/Spinner';
@@ -10,67 +10,6 @@ import ProgressBar from '../../components/ui/ProgressBar';
 import AiTutorWidget from '../../components/tutor/AiTutorWidget';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
-
-// ── Mock lesson ───────────────────────────────────────────────────────────────
-const MOCK_LESSON = {
-  id: 5,
-  titre: 'Query Parameters',
-  module: { id: 2, titre: 'Routing & Paramètres', cours_id: 1 },
-  ordre: 2,
-  duree: 15,
-  statut: 'en_cours',
-  contenu: [
-    {
-      type: 'intro',
-      texte: 'Les **query parameters** sont des paramètres optionnels passés dans l\'URL après le `?`. FastAPI les détecte automatiquement depuis la signature de la fonction.',
-    },
-    {
-      type: 'code',
-      langage: 'python',
-      titre: 'Exemple basique',
-      code: `from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/items/")
-async def read_items(skip: int = 0, limit: int = 10):
-    return {"skip": skip, "limit": limit}`,
-      explication: 'Ici `skip` et `limit` sont des query parameters. FastAPI les convertit automatiquement vers les types Python déclarés.',
-    },
-    {
-      type: 'info',
-      titre: 'Astuce',
-      texte: 'Si un query parameter n\'a pas de valeur par défaut, il devient **obligatoire**. Avec une valeur par défaut, il devient optionnel.',
-    },
-    {
-      type: 'code',
-      langage: 'python',
-      titre: 'Paramètre obligatoire vs optionnel',
-      code: `from typing import Optional
-
-@app.get("/users/")
-async def get_users(
-    active: bool,             # Obligatoire
-    name: Optional[str] = None  # Optionnel
-):
-    return {"active": active, "name": name}`,
-    },
-    {
-      type: 'resume',
-      points: [
-        'Les query parameters se déclarent dans la signature de fonction',
-        'FastAPI gère la conversion de type automatiquement',
-        'Sans valeur par défaut = paramètre obligatoire',
-        'Avec valeur par défaut = paramètre optionnel',
-        'On peut utiliser `Optional[type]` pour les valeurs nullables',
-      ],
-    },
-  ],
-  lesson_precedente: { id: 4, titre: 'Path parameters' },
-  lesson_suivante: { id: 6, titre: 'Request body avec Pydantic' },
-  quiz_id: null,
-};
-// ─────────────────────────────────────────────────────────────────────────────
 
 function CodeBlock({ code, langage, titre }) {
   const [copied, setCopied] = useState(false);
@@ -104,7 +43,7 @@ function CodeBlock({ code, langage, titre }) {
 }
 
 function renderMarkdown(text) {
-  // Very lightweight inline markdown: **bold** and `code`
+  if (!text) return '';
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/`([^`]+)`/g, '<code class="bg-surface-700 text-primary-300 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>');
@@ -115,17 +54,38 @@ export default function LessonPage() {
   const navigate = useNavigate();
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [completing, setCompleting] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [showTutor, setShowTutor] = useState(false);
   const contentRef = useRef(null);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     courseService.getLesson(lessonId)
-      .then((res) => setLesson(res.data))
-      .catch(() => setLesson(MOCK_LESSON))
+      .then((res) => {
+        setLesson(res.data);
+      })
+      .catch((err) => {
+        setError(err.response?.data?.detail || 'Impossible de charger la leçon. Vérifie que le backend est actif.');
+      })
       .finally(() => setLoading(false));
   }, [lessonId]);
+
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      const res = await courseService.getLesson(lessonId, { regenerate: true });
+      setLesson(res.data);
+      toast.success('Leçon enrichie et complétée avec l\'IA !');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erreur lors de la régénération');
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const handleComplete = async () => {
     setCompleting(true);
@@ -133,9 +93,8 @@ export default function LessonPage() {
       await progressService.markLesson(lessonId);
       setCompleted(true);
       toast.success('Leçon complétée !');
-    } catch {
-      setCompleted(true); // optimistic in dev
-      toast.success('Leçon complétée !');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erreur lors de la validation');
     } finally {
       setCompleting(false);
     }
@@ -145,7 +104,40 @@ export default function LessonPage() {
     return <div className="flex items-center justify-center h-64"><Spinner size="xl" /></div>;
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64 animate-in">
+        <div className="card card-body max-w-md text-center">
+          <AlertCircle className="w-10 h-10 text-danger-400 mx-auto mb-3" />
+          <p className="text-slate-100 font-semibold mb-1">Erreur</p>
+          <p className="text-slate-400 text-sm mb-4">{error}</p>
+          <div className="flex gap-2 justify-center">
+            <button onClick={() => window.location.reload()} className="btn-secondary">
+              Réessayer
+            </button>
+            <button onClick={() => navigate(-1)} className="btn-primary">
+              Retour
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!lesson) return null;
+
+  const rawContenu = lesson.contenu_blocks || lesson.contenu;
+  let blocks = [];
+  if (Array.isArray(rawContenu)) {
+    blocks = rawContenu;
+  } else if (typeof rawContenu === 'string') {
+    try {
+      const parsed = JSON.parse(rawContenu);
+      blocks = Array.isArray(parsed) ? parsed : (parsed.blocks || []);
+    } catch {
+      blocks = [{ type: 'intro', texte: rawContenu }];
+    }
+  }
 
   return (
     <div className="flex gap-6 animate-in">
@@ -172,19 +164,30 @@ export default function LessonPage() {
             </div>
             <h1 className="text-2xl font-bold text-slate-50">{lesson.titre}</h1>
           </div>
-          <button
-            onClick={() => setShowTutor(!showTutor)}
-            className={clsx('btn shrink-0', showTutor ? 'btn-primary' : 'btn-secondary')}
-            aria-pressed={showTutor}
-          >
-            <MessageSquare className="w-4 h-4" />
-            Tuteur IA
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              className="btn btn-secondary flex items-center gap-1.5 text-sm"
+              title="Régénérer et enrichir le contenu complet de la leçon avec l'IA"
+            >
+              {regenerating ? <Spinner size="sm" /> : <Sparkles className="w-4 h-4 text-warning-400" />}
+              <span className="hidden sm:inline">Enrichir avec l'IA</span>
+            </button>
+            <button
+              onClick={() => setShowTutor(!showTutor)}
+              className={clsx('btn shrink-0', showTutor ? 'btn-primary' : 'btn-secondary')}
+              aria-pressed={showTutor}
+            >
+              <MessageSquare className="w-4 h-4" />
+              Tuteur IA
+            </button>
+          </div>
         </div>
 
         {/* Content blocks */}
         <div ref={contentRef} className="space-y-6">
-          {lesson.contenu.map((block, i) => {
+          {blocks.map((block, i) => {
             if (block.type === 'intro') {
               return (
                 <div key={i} className="text-slate-300 leading-relaxed text-base"
@@ -249,23 +252,45 @@ export default function LessonPage() {
 
         {/* Actions */}
         <div className="mt-10 pt-6 border-t border-surface-800">
-          {/* Complete button */}
-          {!completed && lesson.statut !== 'complete' && (
-            <button
-              onClick={handleComplete}
-              disabled={completing}
-              className="btn-primary btn-lg w-full mb-4"
-            >
-              {completing ? <Spinner size="sm" /> : <><CheckCircle className="w-5 h-5" /> Marquer comme complétée</>}
-            </button>
-          )}
+          {/* Complete button & Quiz CTAs */}
+          {(!completed && lesson.statut !== 'complete') ? (
+            <div className="space-y-3 mb-6">
+              <button
+                onClick={handleComplete}
+                disabled={completing}
+                className="btn-primary btn-lg w-full"
+              >
+                {completing ? <Spinner size="sm" /> : <><CheckCircle className="w-5 h-5" /> Marquer comme complétée</>}
+              </button>
+              {(!lesson.lesson_suivante && lesson.module?.id) && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-surface-800/80 border border-surface-700 text-xs text-slate-400">
+                  <Lock className="w-4 h-4 text-warning-400 shrink-0" />
+                  <span>Marque d'abord cette leçon comme terminée pour débloquer le Quiz du module.</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Module quiz CTA — shown on last lesson of the module ONLY after completion! */}
+              {!lesson.lesson_suivante && lesson.module?.id && (
+                <Link
+                  to={`/quiz/module/${lesson.module.id}`}
+                  className="group relative w-full mb-6 flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-semibold text-base transition-all duration-300 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-lg shadow-primary-600/25 hover:shadow-primary-500/40 hover:scale-[1.02]"
+                >
+                  <FileQuestion className="w-5 h-5" />
+                  Passer au Quiz du module
+                  <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                </Link>
+              )}
 
-          {/* Quiz CTA */}
-          {lesson.quiz_id && (
-            <Link to={`/quiz/${lesson.quiz_id}`} className="btn-secondary w-full mb-4 justify-center">
-              <FileQuestion className="w-4 h-4 text-warning-500" />
-              Faire le quiz de cette leçon
-            </Link>
+              {/* Per-lesson quiz CTA — shown only after completion */}
+              {lesson.quiz_id && (
+                <Link to={`/quiz/${lesson.quiz_id}`} className="btn-secondary w-full mb-4 justify-center">
+                  <FileQuestion className="w-4 h-4 text-warning-500" />
+                  Faire le quiz de cette leçon
+                </Link>
+              )}
+            </>
           )}
 
           {/* Prev / Next navigation */}

@@ -262,7 +262,7 @@ export default function LearningPathPage() {
                       {module.quiz_statut === 'verrouille' ? (
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-800/50 opacity-50">
                           <Lock className="w-4 h-4 text-slate-600" />
-                          <span className="text-sm text-slate-500">Quiz du module (verrouillé)</span>
+                          <span className="text-sm text-slate-500">Quiz du module (débloqué après toutes les leçons)</span>
                         </div>
                       ) : (
                         <Link
@@ -278,13 +278,32 @@ export default function LearningPathPage() {
                           <span className="text-sm font-medium text-slate-200 flex-1">
                             Quiz — {module.titre}
                           </span>
-                          {module.quiz_score !== null
+                          {module.quiz_score !== null && module.quiz_score !== undefined
                             ? <span className="text-xs font-semibold text-success-500">{module.quiz_score}%</span>
-                            : <span className="badge badge-warning text-xs">À faire</span>
+                            : <span className="badge badge-warning text-xs">Requis (≥ 50% pour débloquer la suite)</span>
                           }
                           <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-warning-500 transition-colors" />
                         </Link>
                       )}
+                    </div>
+                  )}
+
+                  {/* Mini-projet suggéré (facultatif / non compté dans le suivi) */}
+                  {module.mini_projet && (
+                    <div className="pt-2 border-t border-surface-800">
+                      <div className="p-3.5 rounded-xl bg-accent-500/5 border border-accent-500/20">
+                        <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+                          <span className="flex items-center gap-2 text-xs font-semibold text-accent-400">
+                            <Code2 className="w-4 h-4" /> {module.mini_projet.titre}
+                          </span>
+                          <span className="badge badge-surface text-[10px] text-slate-400">
+                            Bonus pratique (non compté dans le suivi)
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          {module.mini_projet.description}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>

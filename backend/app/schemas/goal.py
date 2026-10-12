@@ -28,5 +28,10 @@ class GoalOut(BaseModel):
     duree: int | None
     statut: GoalStatut
     date_creation: datetime
+    # Computed fields for progress gauge
+    progression: float = 0.0
+    modules_completes: int = 0
+    modules_total: int = 0
+    prochaine_lecon: dict | None = None
 
     model_config = {"from_attributes": True}

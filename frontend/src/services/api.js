@@ -49,6 +49,7 @@ export const authService = {
   login:              (data)        => api.post('/auth/login', data),
   me:                 ()            => api.get('/auth/me'),
   updateMe:           (data)        => api.put('/auth/me', data),
+  changePassword:     (data)        => api.post('/auth/change-password', data),
   forgotPassword:     (email)       => api.post('/auth/forgot-password', { email }),
   verifyResetOtp:     (data)        => api.post('/auth/verify-reset-otp', data),
   resetPassword:      (data)        => api.post('/auth/reset-password', data),
@@ -78,18 +79,19 @@ export const evaluationService = {
 
 // ── Courses ────────────────────────────────────────────────────────────────
 export const courseService = {
-  generate:  (goalId)   => api.post(`/goals/${goalId}/course/generate`),
-  get:       (goalId)   => api.get(`/goals/${goalId}/course`),
-  getModule: (moduleId) => api.get(`/modules/${moduleId}`),
-  getLesson: (lessonId) => api.get(`/lessons/${lessonId}`),
+  generate:  (goalId)         => api.post(`/goals/${goalId}/course/generate`),
+  get:       (goalId)         => api.get(`/goals/${goalId}/course`),
+  getModule: (moduleId)       => api.get(`/modules/${moduleId}`),
+  getLesson: (lessonId, params) => api.get(`/lessons/${lessonId}`, { params }),
 };
 
 // ── Quizzes ────────────────────────────────────────────────────────────────
 export const quizService = {
-  getByLesson: (lessonId)        => api.get(`/lessons/${lessonId}/quiz`),
-  getByModule: (moduleId)        => api.get(`/quizzes/module/${moduleId}`),
-  get:         (quizId)          => api.get(`/quizzes/${quizId}`),
-  submit:      (quizId, answers) => api.post(`/quizzes/${quizId}/submit`, { answers }),
+  getByLesson: (lessonId, params) => api.get(`/lessons/${lessonId}/quiz`, { params }),
+  getByModule: (moduleId, params) => api.get(`/quizzes/module/${moduleId}`, { params }),
+  get:         (quizId)           => api.get(`/quizzes/${quizId}`),
+  regenerate:  (quizId)           => api.post(`/quizzes/${quizId}/regenerate`),
+  submit:      (quizId, answers)  => api.post(`/quizzes/${quizId}/submit`, { answers }),
 };
 
 // ── Exercises ──────────────────────────────────────────────────────────────
@@ -100,10 +102,11 @@ export const exerciseService = {
 
 // ── Progress ───────────────────────────────────────────────────────────────
 export const progressService = {
-  list:        ()               => api.get('/progress'),
-  get:         ()               => api.get('/progress'),
-  update:      (lessonId, data) => api.put(`/progress/${lessonId}`, data),
-  markLesson:  (lessonId, data) => api.put(`/progress/${lessonId}`, data),
+  list:        (goalId)         => api.get('/progress', { params: goalId ? { goal_id: goalId } : {} }),
+  get:         (goalId)         => api.get('/progress', { params: goalId ? { goal_id: goalId } : {} }),
+  getByGoal:   (goalId)         => api.get(`/progress/${goalId}`),
+  update:      (lessonId, data) => api.post(`/progress/lessons/${lessonId}/complete`, data),
+  markLesson:  (lessonId)       => api.post(`/progress/lessons/${lessonId}/complete`),
 };
 
 // ── Skills ─────────────────────────────────────────────────────────────────

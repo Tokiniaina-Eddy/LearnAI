@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Map, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { skillService, goalService } from '../../services/api';
 import Spinner from '../../components/ui/Spinner';
@@ -19,18 +20,19 @@ const getTendanceIcon = (t) => {
 
 const getScoreLabel = (score) => {
   if (score >= 80) return { label: 'Maîtrisé', color: 'badge-success' };
-  if (score >= 60) return { label: 'Bien', color: 'badge-primary' };
-  if (score >= 40) return { label: 'En cours', color: 'badge-warning' };
+  if (score >= 65) return { label: 'Bien', color: 'badge-primary' };
+  if (score >= 50) return { label: 'En cours', color: 'badge-warning' };
   return { label: 'À renforcer', color: 'badge-danger' };
 };
 
 const barColor = (score) => {
   if (score >= 70) return '#22c55e';
-  if (score >= 40) return '#eab308';
+  if (score >= 50) return '#eab308';
   return '#ef4444';
 };
 
 export default function SkillMapPage() {
+  const { goalId } = useParams();
   const [goals, setGoals] = useState([]);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [skills, setSkills] = useState([]);
@@ -42,13 +44,20 @@ export default function SkillMapPage() {
       .then((res) => {
         const g = res.data || [];
         setGoals(g);
-        if (g.length > 0) setSelectedGoal(g[0]?.id);
+        if (goalId) {
+          const match = g.find((x) => String(x.id) === String(goalId));
+          if (match) setSelectedGoal(match.id);
+          else if (g.length > 0) setSelectedGoal(g[0]?.id);
+        } else if (g.length > 0) {
+          const active = g.find((x) => x.statut === 'actif') || g[0];
+          setSelectedGoal(active.id);
+        }
       })
       .catch(() => {
         // backend offline — liste vide
         setGoals([]);
       });
-  }, []);
+  }, [goalId]);
 
   useEffect(() => {
     if (!selectedGoal) return;
@@ -69,8 +78,8 @@ export default function SkillMapPage() {
     : 0;
 
   const strong = skills.filter(s => s.score >= 70);
-  const weak = skills.filter(s => s.score < 40);
-  const inProgress = skills.filter(s => s.score >= 40 && s.score < 70);
+  const weak = skills.filter(s => s.score < 50);
+  const inProgress = skills.filter(s => s.score >= 50 && s.score < 70);
 
   const radarData = skills.map(s => ({ sujet: s.nom, score: s.score }));
 

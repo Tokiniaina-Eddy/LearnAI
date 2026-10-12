@@ -220,7 +220,8 @@ def generate_lesson_content(
     technologie: str,
 ) -> list[dict]:
     """Generate rich content blocks for a lesson."""
-    prompt = f"""Tu es un expert en {technologie} et en pédagogie. Génère le contenu détaillé d'une leçon.
+    prompt = f"""Tu es un expert en {technologie} et un excellent pédagogue.
+Génère le contenu COMPLET et DÉTAILLÉ d'une leçon.
 
 Cours : {cours_titre}
 Module : {module_titre}
@@ -232,21 +233,33 @@ Retourne un JSON avec une liste de blocs de contenu :
 {{
   "blocks": [
     {{"type": "intro", "texte": "Introduction en **markdown** avec `code inline`"}},
-    {{"type": "code", "langage": "python", "titre": "Exemple", "code": "# code ici", "explication": "Explication du code"}},
-    {{"type": "info", "titre": "💡 Astuce", "texte": "Conseil important"}},
-    {{"type": "resume", "points": ["Point clé 1", "Point clé 2"]}}
+    {{"type": "code", "langage": "python", "titre": "Titre descriptif", "code": "# code complet et fonctionnel", "explication": "Explication ligne par ligne du code"}},
+    {{"type": "info", "titre": "💡 Titre", "texte": "Conseil, piège courant ou bonne pratique"}},
+    {{"type": "resume", "points": ["Point clé 1", "Point clé 2", ...]}}
   ]
 }}
 
-Règles :
-- Commence par un bloc "intro"
-- Inclus 1-3 blocs "code" avec des exemples pratiques réels
-- Ajoute 1-2 blocs "info" pour les astuces
-- Termine par un bloc "resume" avec 4-5 points clés
-- Le code doit être fonctionnel et adapté à {niveau}
-- Explications claires et pédagogiques
+Règles STRICTES :
+- La leçon doit couvrir EN PROFONDEUR uniquement le sujet "{lesson_titre}".
+- Ne mentionne PAS de concepts qui ne sont pas dans le titre de la leçon.
+- Commence par 1-2 blocs "intro" qui expliquent le concept, pourquoi c'est important, et dans quel contexte on l'utilise.
+- Inclus 3-5 blocs "code" avec des exemples progressifs :
+  • Un premier exemple simple et basique
+  • Des exemples de plus en plus complexes
+  • Un exemple concret / cas réel d'utilisation
+  • Chaque bloc code doit avoir une explication détaillée de CHAQUE ligne importante
+- Ajoute 2-4 blocs "info" répartis dans la leçon pour :
+  • Les pièges courants et erreurs fréquentes
+  • Les bonnes pratiques
+  • Les astuces utiles
+- Termine par un bloc "resume" avec 5-7 points clés
+- Le contenu total doit faire au minimum 8 blocs et au maximum 15 blocs
+- Tout le code doit être fonctionnel, testé et adapté au niveau {niveau}
+- Utilise le **markdown** (gras, `code inline`) dans les textes
+- Explications claires, progressives et pédagogiques
+- Niveau {niveau} : {'explique chaque concept depuis zéro, ne suppose aucune connaissance préalable' if niveau == 'debutant' else 'suppose les bases acquises, va plus en profondeur' if niveau == 'intermediaire' else 'focus sur les subtilités avancées et les patterns professionnels'}
 """
-    data, _ = _chat_json([{"role": "user", "content": prompt}], temperature=0.5, max_tokens=3000)
+    data, _ = _chat_json([{"role": "user", "content": prompt}], temperature=0.5, max_tokens=6000)
     return data.get("blocks", [])
 
 
@@ -258,14 +271,30 @@ def generate_quiz(
     technologie: str,
     niveau: str,
     nb_questions: int = 5,
+    contenu_lecon: str | None = None,
 ) -> QuizAI:
-    """Generate a quiz for a lesson or module."""
+    """Generate a quiz for a lesson or module, based on actual lesson content."""
+
+    # Build context from lesson content if available
+    contenu_context = ""
+    if contenu_lecon:
+        contenu_context = f"""\n\nVoici le contenu EXACT de la leçon que l'apprenant a étudiée :
+--- DÉBUT DU CONTENU ---
+{contenu_lecon}
+--- FIN DU CONTENU ---
+
+RÈGLE ABSOLUE ET STRICTE :
+Chaque question du quiz DOIT porter EXCLUSIVEMENT sur un concept, un exemple de code, une règle ou une notion qui apparaît EXPLICITEMENT dans le contenu ci-dessus.
+INTERDICTION FORMELLE : Si un concept (par exemple les fonctions, les types de données, les structures conditionnelles, etc.) n'est PAS expliqué dans le contenu ci-dessus, il est TOTALEMENT INTERDIT de poser une question dessus, même s'il s'agit d'une notion courante de la technologie.
+Teste UNIQUEMENT ce que l'apprenant a effectivement lu et appris dans ce texte précis."""
+
     prompt = f"""Tu es un expert pédagogique. Génère un quiz de {nb_questions} questions.
 
 Module : {module_titre}
 Leçon/Sujet : {lesson_titre}
 Technologie : {technologie}
 Niveau : {niveau}
+{contenu_context}
 
 Retourne un JSON :
 {{
@@ -276,19 +305,22 @@ Retourne un JSON :
       "type": "mcq",
       "options": ["A", "B", "C", "D"],
       "reponse": 0,
-      "explication": "Explication de la bonne réponse"
+      "explication": "Explication claire basée sur le contenu de la leçon"
     }}
   ]
 }}
 
 Règles :
 - Exactement {nb_questions} questions QCM
-- 4 options par question
+- 4 options par question (plausibles mais une seule correcte)
 - "reponse" = index (0-3) de la bonne réponse
-- Questions variées testant la compréhension, pas la mémorisation
-- Explications claires et pédagogiques
+- Questions variées testant la compréhension de ce qui est enseigné dans la leçon
+- Explications claires et pédagogiques citant ce qui a été vu
+- RÈGLE DE CONFORMITÉ : Les questions doivent porter À 100% sur le texte de la leçon fourni
+- Ne pose JAMAIS de questions sur des notions absentes de la leçon
+
 """
-    data, _ = _chat_json([{"role": "user", "content": prompt}], temperature=0.4)
+    data, _ = _chat_json([{"role": "user", "content": prompt}], temperature=0.4, max_tokens=4096)
     return QuizAI(**data)
 
 

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../../services/api';
 import Spinner from '../../components/ui/Spinner';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -46,14 +47,26 @@ export default function SettingsPage() {
   const handleSaveProfil = async (e) => {
     e.preventDefault();
     setSaving(true);
-    await new Promise(r => setTimeout(r, 800)); // Simulate API call
-    updateUser({ ...user, ...profil });
-    toast.success('Profil mis à jour !');
-    setSaving(false);
+    try {
+      const { data } = await authService.updateMe({
+        nom: profil.nom,
+        email: profil.email,
+      });
+      updateUser({ ...user, ...data });
+      toast.success('Profil mis à jour !');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erreur lors de la mise à jour du profil');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSavePassword = async (e) => {
     e.preventDefault();
+    if (!passwords.actuel) {
+      toast.error('Renseigne ton mot de passe actuel');
+      return;
+    }
     if (passwords.nouveau !== passwords.confirmation) {
       toast.error('Les mots de passe ne correspondent pas');
       return;
@@ -63,10 +76,18 @@ export default function SettingsPage() {
       return;
     }
     setSaving(true);
-    await new Promise(r => setTimeout(r, 800));
-    toast.success('Mot de passe mis à jour !');
-    setPasswords({ actuel: '', nouveau: '', confirmation: '' });
-    setSaving(false);
+    try {
+      await authService.changePassword({
+        current_password: passwords.actuel,
+        new_password: passwords.nouveau,
+      });
+      toast.success('Mot de passe mis à jour !');
+      setPasswords({ actuel: '', nouveau: '', confirmation: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erreur lors du changement de mot de passe');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleLogout = () => {

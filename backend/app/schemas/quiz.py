@@ -17,6 +17,8 @@ class QuizOut(BaseModel):
     id: int
     lesson_id: int | None
     module_id: int | None
+    goal_id: int | None = None
+    course_id: int | None = None
     titre: str
     questions: list[QuestionOut] = []
 
@@ -33,6 +35,7 @@ class QuizResult(BaseModel):
     correct: int
     total: int
     passed: bool
+    module_debloque: bool = False
     details: list[dict]
 
 

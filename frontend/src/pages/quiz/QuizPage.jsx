@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   CheckCircle, XCircle, ChevronRight, ChevronLeft,
-  Trophy, RotateCcw, FileQuestion, AlertCircle, Lightbulb,
+  Trophy, RotateCcw, FileQuestion, AlertCircle, Lightbulb, Sparkles,
 } from 'lucide-react';
 import { quizService } from '../../services/api';
 import Spinner from '../../components/ui/Spinner';
@@ -10,97 +10,102 @@ import ProgressBar from '../../components/ui/ProgressBar';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
-// ── Mock quiz ─────────────────────────────────────────────────────────────────
-const MOCK_QUIZ = {
-  id: 1,
-  titre: 'Quiz — Routing & Paramètres',
-  lesson_id: 5,
-  questions: [
-    {
-      id: 1,
-      question: 'Comment déclare-t-on un path parameter dans FastAPI ?',
-      options: [
-        '@app.get("/items?id={item_id}")',
-        '@app.get("/items/{item_id}")',
-        '@app.get("/items/[item_id]")',
-        '@app.get("/items/:item_id")',
-      ],
-      reponse: 1,
-      explication: 'FastAPI utilise les accolades {param} dans le chemin pour déclarer des path parameters, similaire à la notation des f-strings Python.',
-    },
-    {
-      id: 2,
-      question: 'Qu\'est-ce qu\'un query parameter optionnel en FastAPI ?',
-      options: [
-        'Un paramètre sans type déclaré',
-        'Un paramètre avec une valeur par défaut',
-        'Un paramètre préfixé par `?`',
-        'Un paramètre défini avec `@query`',
-      ],
-      reponse: 1,
-      explication: 'En FastAPI, un paramètre de fonction avec une valeur par défaut devient automatiquement un query parameter optionnel.',
-    },
-    {
-      id: 3,
-      question: 'Laquelle de ces URLs appelle correctement `GET /items/{id}?active=true` ?',
-      options: [
-        '/items/42?active=true',
-        '/items?id=42&active=true',
-        '/items/42/active/true',
-        '/items/[42]?active=true',
-      ],
-      reponse: 0,
-      explication: 'Le path parameter `id` est passé dans le chemin (/items/42) et le query parameter `active` est passé dans la query string (?active=true).',
-    },
-    {
-      id: 4,
-      question: 'Comment rendre un query parameter obligatoire dans FastAPI ?',
-      options: [
-        'En le préfixant par `required=True`',
-        'En utilisant le décorateur `@required`',
-        'En ne lui donnant aucune valeur par défaut',
-        'En le déclarant dans `@app.get()` directement',
-      ],
-      reponse: 2,
-      explication: 'Sans valeur par défaut, FastAPI considère automatiquement le paramètre comme obligatoire et retourne une erreur 422 s\'il est absent.',
-    },
-    {
-      id: 5,
-      question: 'Quel type Python utilise-t-on pour un query parameter optionnel nullable ?',
-      options: [
-        'nullable[str]',
-        'str | None avec = None',
-        'Optional(str)',
-        'Maybe[str]',
-      ],
-      reponse: 1,
-      explication: '`str | None = None` (ou `Optional[str] = None` pour Python < 3.10) indique un paramètre optionnel qui peut valoir None.',
-    },
-  ],
-};
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function QuizPage() {
-  const { quizId } = useParams();
+  const { quizId, moduleId, lessonId } = useParams();
   const navigate = useNavigate();
 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [regenerating, setRegenerating] = useState(false);
+  const [error, setError] = useState(null);
   const [phase, setPhase] = useState('questions'); // questions | results
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState({});   // { questionId: answerIndex }
   const [revealed, setRevealed] = useState({});   // { questionId: true } — show explanation
   const [submitting, setSubmitting] = useState(false);
 
+  const loadQuiz = useCallback((forceRegenerate = false) => {
+    let fetchPromise;
+    const params = forceRegenerate ? { regenerate: true } : {};
+    if (quizId && forceRegenerate) {
+      fetchPromise = quizService.regenerate(quizId);
+    } else if (quizId) {
+      fetchPromise = quizService.get(quizId);
+    } else if (moduleId) {
+      fetchPromise = quizService.getByModule(moduleId, params);
+    } else if (lessonId) {
+      fetchPromise = quizService.getByLesson(lessonId, params);
+    } else {
+      setError('Identifiant de quiz manquant');
+      setLoading(false);
+      return;
+    }
+
+    if (forceRegenerate) {
+      setRegenerating(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+
+    fetchPromise
+      .then((res) => {
+        setQuiz(res.data);
+        setPhase('questions');
+        setCurrent(0);
+        setSelected({});
+        setRevealed({});
+        if (forceRegenerate) {
+          toast.success('Quiz régénéré et 100% aligné sur la leçon !');
+        }
+      })
+      .catch((err) => {
+        setError(err.response?.data?.detail || 'Impossible de charger le quiz. Vérifie ta connexion.');
+      })
+      .finally(() => {
+        setLoading(false);
+        setRegenerating(false);
+      });
+  }, [quizId, moduleId, lessonId]);
+
   useEffect(() => {
-    quizService.get(quizId)
-      .then((res) => setQuiz(res.data))
-      .catch(() => setQuiz(MOCK_QUIZ))  // fallback mock when backend offline
-      .finally(() => setLoading(false));
-  }, [quizId]);
+    loadQuiz(false);
+  }, [loadQuiz]);
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="xl" /></div>;
-  if (!quiz) return null;
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64 animate-in">
+        <div className="card card-body max-w-md text-center">
+          <AlertCircle className="w-10 h-10 text-danger-400 mx-auto mb-3" />
+          <p className="text-slate-100 font-semibold mb-1">Erreur de chargement</p>
+          <p className="text-slate-400 text-sm mb-4">{error}</p>
+          <div className="flex gap-2 justify-center">
+            <button onClick={() => window.location.reload()} className="btn-secondary">
+              Réessayer
+            </button>
+            <button onClick={() => navigate(-1)} className="btn-primary">
+              Retour
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+    return (
+      <div className="card card-body max-w-md mx-auto text-center mt-12 animate-in">
+        <FileQuestion className="w-10 h-10 text-slate-500 mx-auto mb-3" />
+        <p className="text-slate-200 font-semibold mb-1">Aucune question</p>
+        <p className="text-slate-400 text-sm mb-4">Ce quiz ne contient aucune question pour le moment.</p>
+        <button onClick={() => navigate(-1)} className="btn-primary mx-auto">
+          Retour
+        </button>
+      </div>
+    );
+  }
 
   const q = quiz.questions[current];
   const totalQ = quiz.questions.length;
@@ -148,7 +153,15 @@ export default function QuizPage() {
       (q) => selected[q.id] === q.reponse
     ).length;
     const score = Math.round((correct / totalQ) * 100);
-    const passed = score >= 70;
+    const passed = score >= 50;
+
+    const handleGoToModules = () => {
+      if (quiz?.goal_id) {
+        navigate(`/learning/${quiz.goal_id}`);
+      } else {
+        navigate('/learning');
+      }
+    };
 
     return (
       <div className="max-w-2xl mx-auto animate-in">
@@ -160,12 +173,12 @@ export default function QuizPage() {
             <Trophy className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-slate-50 mb-1">
-            {passed ? 'Bravo !' : 'Continue comme ça !'}
+            {passed ? 'Module validé !' : 'Score insuffisant (< 50%)'}
           </h1>
           <p className="text-slate-400 mb-6">
             {passed
-              ? 'Tu maîtrises bien ce sujet. Passe à la suite !'
-              : 'Revois les points difficiles et réessaie quand tu veux.'}
+              ? 'Félicitations ! Tu as obtenu au moins 50%, le module suivant est désormais débloqué.'
+              : 'Il te faut au moins 50% de réussite pour débloquer le module suivant. Réessaie pour débloquer la suite !'}
           </p>
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="bg-surface-800 rounded-xl p-4">
@@ -219,15 +232,24 @@ export default function QuizPage() {
           })}
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => { setPhase('questions'); setCurrent(0); setSelected({}); setRevealed({}); }}
             className="btn-secondary flex-1"
           >
             <RotateCcw className="w-4 h-4" /> Réessayer
           </button>
-          <button onClick={() => navigate(-1)} className="btn-primary flex-1">
-            Continuer l'apprentissage <ChevronRight className="w-4 h-4" />
+          <button
+            onClick={() => loadQuiz(true)}
+            disabled={regenerating}
+            className="btn-secondary flex-1 text-primary-300 hover:text-white"
+            title="Générer de nouvelles questions 100% basées sur la leçon"
+          >
+            {regenerating ? <Spinner size="sm" /> : <Sparkles className="w-4 h-4 text-warning-400" />}
+            Nouveau quiz (IA)
+          </button>
+          <button onClick={handleGoToModules} className="btn-primary flex-1">
+            Retour aux modules <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -242,7 +264,7 @@ export default function QuizPage() {
   return (
     <div className="max-w-2xl mx-auto animate-in">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <FileQuestion className="w-5 h-5 text-warning-500" />
@@ -250,9 +272,20 @@ export default function QuizPage() {
           </div>
           <p className="text-sm text-slate-500">{answered}/{totalQ} questions répondues</p>
         </div>
-        <span className="text-sm font-medium text-primary-400">
-          {current + 1} / {totalQ}
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => loadQuiz(true)}
+            disabled={regenerating}
+            className="btn-ghost btn-sm text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1.5"
+            title="Régénérer les questions avec l'IA basées sur la leçon"
+          >
+            {regenerating ? <Spinner size="xs" /> : <Sparkles className="w-3.5 h-3.5 text-warning-400" />}
+            <span>Régénérer</span>
+          </button>
+          <span className="text-sm font-medium text-primary-400">
+            {current + 1} / {totalQ}
+          </span>
+        </div>
       </div>
 
       {/* Progress */}
